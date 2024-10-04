@@ -1,52 +1,39 @@
 import React, { useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope, faLock, faEye, faEyeSlash, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const LoginModal = ({ isOpen, onClose }) => {
-    const [emailOrUsername, setEmailOrUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
-    const togglePasswordVisibility = () => {
-        setShowPassword(!showPassword);
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        console.log(emailOrUsername, password);
-        // Implement your login logic here
+    const handleGitHubLogin = () => {
+        window.location.href = 'http://localhost:5000/auth/github'; 
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-            <div className="bg-gray-800 rounded-lg p-6 w-1/3 relative">
-                <h2 className="mb-4 text-white">Login using your GitHub account to continue</h2>
-                <button onClick={onClose} className="absolute top-4 right-4 text-2xl text-red-800 hover:text-red-600">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 transition-opacity duration-300">
+            <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-lg relative shadow-lg transform transition-transform duration-300 scale-100">
+                <button onClick={onClose} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-white transition-colors duration-200">
                     <FontAwesomeIcon icon={faTimes} />
                 </button>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="relative">
-                        <FaGithub className="absolute left-2 top-2 h-6 w-6 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Username or Email"
-                            value={emailOrUsername}
-                            onChange={(e) => setEmailOrUsername(e.target.value)}
-                            required
-                            className="w-full p-2 pl-10 rounded-xl bg-gray-700 text-white"
-                        />
-                    </div>
-                    
-                    {errorMessage && (
-                        <p className="text-red-500 text-center">{errorMessage}</p> 
-                    )}
 
-                    <button type="submit" className="w-full bg-gray-900 p-2 rounded-xl text-white">Login</button>
-                </form>
+                <h2 className="mb-6 text-2xl text-white text-center font-semibold">Login with GitHub to Continue</h2>
+                
+                <div className="text-center space-y-6">
+                    <button
+                        onClick={handleGitHubLogin}
+                        className="bg-gradient-to-r from-gray-900 to-gray-950 p-3 w-full rounded-full text-white flex items-center justify-center shadow-lg hover:shadow-2xl transform transition-transform duration-300 hover:scale-105"
+                    >
+                        <FaGithub className="mr-3 h-6 w-6" />
+                        <span className="font-semibold text-lg">Login with GitHub</span>
+                    </button>
+
+                    {errorMessage && (
+                        <p className="text-red-500 text-sm text-center mt-4">{errorMessage}</p>
+                    )}
+                </div>
             </div>
         </div>
     );

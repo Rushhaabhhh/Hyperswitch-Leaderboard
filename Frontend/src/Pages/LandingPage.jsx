@@ -10,6 +10,8 @@ function App() {
 
     return (
         <div>
+
+            {/* Navbar */}
             <nav className="bg-[rgb(40,54,82)] p-4 fixed w-full z-50">
                 <div className="container mx-auto flex justify-between items-center">
                     <div>
@@ -36,45 +38,83 @@ function App() {
             {/* Main Content */}
             <div className="bg-gray-100"> 
                 {/* Hero Section */}
-                <section id="home" className="flex flex-col items-center justify-center h-screen bg-[rgb(40,54,82)] text-white relative">
-                    <img src={background} alt="background" className="absolute inset-0 ml-auto h-full object-cover bg-blend-overlay opacity-40" />
-                    <FaGithub className="h-36 w-36 relative z-10 mb-6" />
+                <section id="home" className="relative flex flex-col items-center justify-center h-screen bg-[rgb(40,54,82)] text-white overflow-hidden">
+                    <img src={background} alt="background" className="absolute inset-0 ml-auto h-full object-cover bg-blend-overlay opacity-50" />
+                    
+                    <div className="relative z-10 flex flex-col items-center text-center px-4">
+                        <FaGithub className="h-36 w-36 mb-6 animate-bounce" />
+                        <h1 className="text-6xl font-extrabold animate-fadeInUp">Welcome to the Leaderboard</h1>
+                        <p className="mt-4 text-2xl text-gray-300 animate-fadeInUp">Track and reward top contributors in your community</p>
+                        <button className="mt-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:scale-105 transform transition duration-300">
+                            Get Started
+                        </button>
+                    </div>
 
-                    <h1 className="text-5xl font-extrabold relative z-10">Welcome to the Leaderboard</h1>
-                    <p className="mt-4 text-xl relative z-10">Track and reward top contributors in your community</p>
-                    <button className="mt-6 bg-white text-blue-500 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300 relative z-10">
-                        Get Started
-                    </button>
+                    <div className="absolute bottom-0 left-0 w-full p-4 text-center">
+                        <Link to="features" smooth={true} duration={500} offset={-90}>
+                            <button className="text-white bg-blue-700 px-4 py-2 rounded-full hover:bg-blue-600 transition duration-300">
+                                Discover Features
+                            </button>
+                        </Link>
+                    </div>
                 </section>
 
                 {/* Features Section */}
                 <section id="features" className="py-20 bg-white">
                     <div className="container mx-auto px-4">
-                        <h2 className="text-4xl font-bold text-center mb-12">Features</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-                                <h3 className="text-2xl font-bold mb-4">Real-Time Tracking</h3>
+                        <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">Our Features</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                            <div className="bg-gray-100 p-6 rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300">
+                                <h3 className="text-2xl font-bold mb-4 text-gray-800">Real-Time Tracking</h3>
                                 <p className="text-gray-600">Monitor contributions as they happen in real-time.</p>
                             </div>
-                            <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-                                <h3 className="text-2xl font-bold mb-4">Fair Point Assignment</h3>
+                            <div className="bg-gray-100 p-6 rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300">
+                                <h3 className="text-2xl font-bold mb-4 text-gray-800">Fair Point Assignment</h3>
                                 <p className="text-gray-600">Points are awarded based on issue complexity and importance.</p>
                             </div>
-                            <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-                                <h3 className="text-2xl font-bold mb-4">Community Engagement</h3>
+                            <div className="bg-gray-100 p-6 rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300">
+                                <h3 className="text-2xl font-bold mb-4 text-gray-800">Community Engagement</h3>
                                 <p className="text-gray-600">See how you rank and contribute to the community’s success.</p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* Leaderboard Section */}
-                <section id="leaderboard" className="py-20 bg-gray-50">
-                    <div className="container mx-auto px-4">
-                        <h2 className="text-4xl font-bold text-center mb-12">Leaderboard</h2>
-                        <p className="text-center text-gray-600">Coming soon...</p>
+                {/* Leaderboard Section */} 
+                <section id="leaderboard" className="py-20 bg-[rgb(40,54,82)]">
+                <div className="container mx-auto px-4">
+                    <h2 className="text-4xl font-bold text-center text-white mb-12">Leaderboard</h2>
+                    <div className="overflow-x-auto">
+                    <table className="min-w-full bg-[rgb(30,44,72)] rounded-lg shadow-lg">
+                        <thead>
+                        <tr className="bg-[rgb(20,34,62)] text-white">
+                            <th className="py-3 px-6 text-left text-xl font-semibold">Rank</th>
+                            <th className="py-3 px-6 text-left text-xl font-semibold">Username</th>
+                            <th className="py-3 px-6 text-left text-xl font-semibold">Points</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {/* Dummy data for leaderboard */}
+                        {[
+                            { rank: 1, username: 'JohnDoe', points: 1500 },
+                            { rank: 2, username: 'JaneSmith', points: 1350 },
+                            { rank: 3, username: 'CoderX', points: 1200 },
+                            { rank: 4, username: 'DevMaster', points: 1100 },
+                            { rank: 5, username: 'AlphaGeek', points: 1000 },
+                        ].map((entry, index) => (
+                            <tr key={index} className="border-t border-[rgb(50,64,92)] hover:bg-[rgb(50,64,92)]">
+                            <td className="py-4 px-6 text-lg text-white">{entry.rank}</td>
+                            <td className="py-4 px-6 text-lg text-white">{entry.username}</td>
+                            <td className="py-4 px-6 text-lg text-white">{entry.points}</td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
                     </div>
+                </div>
                 </section>
+
+
 
                 {/* Footer */}
                 <section id="contact" className="py-20 bg-gray-800">
