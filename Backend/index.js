@@ -12,13 +12,21 @@ const authRoutes = require('./Routes/UserRoute');
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
 app.use(express.json());
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+        httpOnly: true, 
+        secure: false, 
+        maxAge: 24 * 60 * 60 * 1000 
+    }
 }));
 
 app.use(passport.initialize());

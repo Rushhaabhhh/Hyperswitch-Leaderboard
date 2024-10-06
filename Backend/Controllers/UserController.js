@@ -19,7 +19,7 @@ exports.githubCallback = (req, res, next) => {
             if (err) {
                 return next(err);
             }
-            return res.redirect('http://localhost:5173/TestPage'); 
+            return res.redirect('http://localhost:5173/HomePage'); 
         });
     })(req, res, next);
 };
@@ -37,6 +37,7 @@ exports.getUser = (req, res) => {
         res.status(401).json({ message: 'User not authenticated' });
     }
 };
+
 
 // Logout the user
 exports.logout = async (req, res) => {
