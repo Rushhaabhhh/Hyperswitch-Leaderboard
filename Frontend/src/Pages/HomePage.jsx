@@ -2,37 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { FaUserCircle, FaSort, FaFilter, FaGithub } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
-// Example data for external contributors
-const mockContributors = [
-    // Weekly contributors
-    { username: 'aliceDev', contributions: 10, points: 1200, github: 'aliceDev', timeframe: 'weekly' },
-    { username: 'samSmith', contributions: 8, points: 950, github: 'samSmith', timeframe: 'weekly' },
-    { username: 'leoBuilder', contributions: 14, points: 1350, github: 'leoBuilder', timeframe: 'weekly' },
-    { username: 'jessCoder', contributions: 11, points: 1280, github: 'jessCoder', timeframe: 'weekly' },
-    { username: 'mikeTech', contributions: 9, points: 1180, github: 'mikeTech', timeframe: 'weekly' },
-
-    // Daily contributors
-    { username: 'carolTech', contributions: 12, points: 1500, github: 'carolTech', timeframe: 'daily' },
-    { username: 'timDev', contributions: 13, points: 1450, github: 'timDev', timeframe: 'daily' },
-    { username: 'lucasCode', contributions: 15, points: 1600, github: 'lucasCode', timeframe: 'daily' },
-    { username: 'zaraDev', contributions: 9, points: 1200, github: 'zaraDev', timeframe: 'daily' },
-    { username: 'ninaTech', contributions: 10, points: 1300, github: 'ninaTech', timeframe: 'daily' },
-
-    // Monthly contributors
-    { username: 'bobCoder', contributions: 15, points: 1100, github: 'bobCoder', timeframe: 'monthly' },
-    { username: 'juliaTech', contributions: 20, points: 1800, github: 'juliaTech', timeframe: 'monthly' },
-    { username: 'peterCode', contributions: 18, points: 1750, github: 'peterCode', timeframe: 'monthly' },
-    { username: 'claraDev', contributions: 22, points: 1900, github: 'claraDev', timeframe: 'monthly' },
-    { username: 'nickBuilder', contributions: 16, points: 1600, github: 'nickBuilder', timeframe: 'monthly' }
-];
-
 const HomePage = () => {
     const [leaderboardData, setLeaderboardData] = useState([]);
     const [filterTimeFrame, setFilterTimeFrame] = useState('monthly');
     const [filterCategory, setFilterCategory] = useState('all');
+    const [loading, setLoading] = useState(true);  // Loading state
+    const [error, setError] = useState(null);      // Error state
 
     useEffect(() => {
-        setLeaderboardData(mockContributors); 
+        const fetchData = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/auth/user');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                setLeaderboardData(data); 
+            } catch (error) {
+                setError(error.message);
+            } finally {
+                setLoading(false);  // Set loading to false once the fetch is complete
+            }
+        };
+        fetchData();
     }, []);
 
     const handleTimeFrameChange = (e) => {
@@ -149,45 +141,51 @@ const HomePage = () => {
                         </div>
                     </div>
 
-                    <motion.div className="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="border-b border-gray-600">
-                                    <th className="py-2">Rank</th>
-                                    <th className="py-2">Username</th>
-                                    <th className="py-2">Contributions</th>
-                                    <th className="py-2">Points</th>
-                                    <th className="py-2">GitHub</th>
-                                    <th className="py-2">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {leaderboardData
-                                    .filter(contributor => contributor.timeframe === filterTimeFrame)
-                                    .map((contributor, index) => (
-                                        <tr key={index} className="border-b border-gray-600 hover:bg-gray-700">
-                                            <td className="py-3">{index + 1}</td>
-                                            <td className="py-3">{contributor.username}</td>
-                                            <td className="py-3">{contributor.contributions}</td>
-                                            <td className="py-3">{contributor.points}</td>
-                                            <td className="py-3">
-                                                <a href={`https://github.com/${contributor.github}`} target="_blank" rel="noopener noreferrer">
-                                                    <FaGithub className="text-white" />
-                                                </a>
-                                            </td>
-                                            <td className="py-3">
-                                                <button
-                                                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-400"
-                                                    onClick={() => viewContributorDetails(contributor)}
-                                                >
-                                                    View Details
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </table>
-                    </motion.div>
+                    {loading ? (  // Show loading spinner or message while fetching data
+                        <div className="mt-4 text-center text-gray-400">Loading...</div>
+                    ) : error ? (  // Show error message if there is an error
+                        <div className="mt-4 text-center text-red-500">{error}</div>
+                    ) : (
+                        <motion.div className="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-gray-600">
+                                        <th className="py-2">Rank</th>
+                                        <th className="py-2">Username</th>
+                                        <th className="py-2">Contributions</th>
+                                        <th className="py-2">Points</th>
+                                        <th className="py-2">GitHub</th>
+                                        <th className="py-2">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {leaderboardData
+                                        .filter(contributor => contributor.timeframe === filterTimeFrame)
+                                        .map((contributor, index) => (
+                                            <tr key={index} className="border-b border-gray-600 hover:bg-gray-700">
+                                                <td className="py-3">{index + 1}</td>
+                                                <td className="py-3">{contributor.username}</td>
+                                                <td className="py-3">{contributor.contributions}</td>
+                                                <td className="py-3">{contributor.points}</td>
+                                                <td className="py-3">
+                                                    <a href={`https://github.com/${contributor.github}`} target="_blank" rel="noopener noreferrer">
+                                                        <FaGithub className="text-white" />
+                                                    </a>
+                                                </td>
+                                                <td className="py-3">
+                                                    <button
+                                                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-400"
+                                                        onClick={() => viewContributorDetails(contributor)}
+                                                    >
+                                                        View Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </table>
+                        </motion.div>
+                    )}
                 </section>
             </div>
 

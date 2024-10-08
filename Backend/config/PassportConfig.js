@@ -1,4 +1,3 @@
-// passport.js
 const GitHubStrategy = require('passport-github2').Strategy;
 const dotenv = require('dotenv');
 const table = require('../config/airtableConfig');
@@ -13,15 +12,13 @@ module.exports = function (passport) {
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
-            console.log(profile); // Debugging to check profile data
-
-            const githubId = profile.id;
+            const githubid = profile.id;
             const username = profile.username || profile.displayName;
             const email = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
 
             // Check if user exists in Airtable
             const records = await table.select({
-                filterByFormula: `githubId = '${githubId}'`
+                filterByFormula: `{githubid} = '${githubid}'`
             }).firstPage();
 
             let user;
@@ -32,9 +29,9 @@ module.exports = function (passport) {
                 const createdRecords = await table.create([
                     {
                         fields: {
-                            githubId: githubId,
+                            githubid: githubid,
                             username: username,
-                            email: email
+                            email: email || 'N/A' // Ensure email is not null
                         }
                     }
                 ]);
