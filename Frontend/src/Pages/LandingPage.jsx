@@ -5,6 +5,7 @@ import LoginModal from '../Components/LoginModal.jsx';
 import background from '../assets/background.png';
 import { motion } from 'framer-motion'; 
 import { FaGithub, FaLinkedin, FaTwitter, FaYoutube } from 'react-icons/fa';
+import Leaderboard from '../Components/Leaderboard.jsx';
 
 function App() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,50 +122,9 @@ function App() {
                     </div>
                 </section>
 
-                {/* Updated Leaderboard Section */}
-                <section id="leaderboard" className="py-20 bg-[rgb(40,54,82)]">
-                    <div className="container mx-auto px-4">
-                        <motion.h2 
-                            className="text-4xl font-bold text-center text-white mb-12"
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 1 }}
-                        >
-                            Leaderboard
-                        </motion.h2>
-                        <div className="overflow-x-auto">
-                            <motion.table 
-                                className="min-w-full bg-[rgb(30,44,72)] rounded-lg shadow-lg"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 1 }}
-                            >
-                                <thead>
-                                    <tr className="bg-[rgb(20,34,62)] text-white">
-                                        <th className="py-3 px-6 text-left text-xl font-semibold">Rank</th>
-                                        <th className="py-3 px-6 text-left text-xl font-semibold">Username</th>
-                                        <th className="py-3 px-6 text-left text-xl font-semibold">Points</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {leaderboardData.map((entry, index) => (
-                                        <motion.tr
-                                            key={index}
-                                            className="border-t border-[rgb(50,64,92)] hover:bg-[rgb(50,64,92)] transition duration-300"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                                        >
-                                            <td className="py-4 px-6 text-lg text-white">{entry.rank}</td>
-                                            <td className="py-4 px-6 text-lg text-white">{entry.username}</td>
-                                            <td className="py-4 px-6 text-lg text-white">{entry.points}</td>
-                                        </motion.tr>
-                                    ))}
-                                </tbody>
-                            </motion.table>
-                        </div>
-                    </div>
-                </section>
+                {/*Leaderboard Section */}
+                <Leaderboard owner="juspay" repo="hyperswitch" />
+                
 
                 {/* Footer */}
                 <section id="contact" className="py-20 bg-gray-800">
