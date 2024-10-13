@@ -1,4 +1,3 @@
-// app.js
 const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
@@ -10,6 +9,7 @@ dotenv.config();
 require('./config/PassportConfig.js')(passport);
 
 const authRoutes = require('./Routes/UserRoute');
+const leaderboardRoutes = require('./Routes/LeaderboardRoute');
 
 const app = express();
 
@@ -41,6 +41,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/auth', authRoutes);
+app.use('/leaderboard', leaderboardRoutes);
 
 // Starting the server
 const PORT = process.env.PORT || 5000;

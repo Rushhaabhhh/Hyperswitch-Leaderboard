@@ -1,55 +1,5 @@
 const passport = require('passport');
 const table = require('../config/airtableConfig');
-const axios = require('axios');
-
-exports.fetchRepoData = async (req, res) => {
-    const { owner, repo } = req.params;
-
-    const githubToken = process.env.GITHUB_ACCESS_TOKEN;
-
-    if (!githubToken) {
-        return res.status(403).json({ message: 'No access token found' });
-    }
-
-    try {
-        const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/issues`, {
-            headers: {
-                Authorization: `token ${githubToken}`
-            }
-        });
-
-        console.log('Raw API Response:', response.data); // Log the raw API response
-
-        // Filter for closed issues
-        const issues = response.data.filter(issue => issue.state === 'closed');
-
-        const userIssueCount = {};
-        issues.forEach(issue => {
-            const user = issue.user.login;
-            if (userIssueCount[user]) {
-                userIssueCount[user]++;
-            } else {
-                userIssueCount[user] = 1;
-            }
-        });
-
-        const usersWithMostIssuesSolved = Object.entries(userIssueCount).map(([user, count]) => ({
-            user,
-            count
-        }));
-
-        usersWithMostIssuesSolved.sort((a, b) => b.count - a.count);
-
-        res.json({
-            issues,
-            usersWithMostIssuesSolved
-        });
-    } catch (error) {
-        console.error('Error fetching repo data:', error);
-        res.status(500).json({ message: 'Error fetching repo data', error: error.message });
-    }
-};
-
 
 // Redirects the user to GitHub for authentication
 exports.githubLogin = (req, res, next) => {

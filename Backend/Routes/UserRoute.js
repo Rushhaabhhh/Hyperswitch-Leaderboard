@@ -11,6 +11,4 @@ router.get('/user', UserController.getUser);
 
 router.get('/logout', UserController.logout);
 
-router.get('/repo/:owner/:repo', UserController.fetchRepoData);
-
 module.exports = router;

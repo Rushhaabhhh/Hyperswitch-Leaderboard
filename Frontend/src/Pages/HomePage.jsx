@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaUserCircle, FaSort, FaFilter, FaGithub } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import Leaderboard from '../Components/Leaderboard';
 
 const HomePage = () => {
     const [leaderboardData, setLeaderboardData] = useState([]);
@@ -107,87 +108,7 @@ const HomePage = () => {
             </motion.section>
 
             {/* Leaderboard Section */}
-            <div className="container mx-auto mt-10 px-6 py-8">
-                <section id="leaderboard" className="mt-12">
-                    <h2 className="text-3xl font-semibold">External Contributor Leaderboard</h2>
-                    <p className="text-gray-400 mt-2">Filter and sort contributors by time frame or contribution type.</p>
-
-                    <div className="flex justify-between items-center mt-6">
-                        <div className="flex items-center space-x-2">
-                            <FaFilter className="text-gray-400" />
-                            <select
-                                className="bg-gray-800 text-white px-4 py-2 rounded-lg"
-                                value={filterTimeFrame}
-                                onChange={handleTimeFrameChange}
-                            >
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
-                            </select>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                            <FaSort className="text-gray-400" />
-                            <select
-                                className="bg-gray-800 text-white px-4 py-2 rounded-lg"
-                                value={filterCategory}
-                                onChange={handleCategoryChange}
-                            >
-                                <option value="all">All</option>
-                                <option value="pull-requests">Pull Requests</option>
-                                <option value="issues">Issues</option>
-                                <option value="commits">Commits</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {loading ? (  // Show loading spinner or message while fetching data
-                        <div className="mt-4 text-center text-gray-400">Loading...</div>
-                    ) : error ? (  // Show error message if there is an error
-                        <div className="mt-4 text-center text-red-500">{error}</div>
-                    ) : (
-                        <motion.div className="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b border-gray-600">
-                                        <th className="py-2">Rank</th>
-                                        <th className="py-2">Username</th>
-                                        <th className="py-2">Contributions</th>
-                                        <th className="py-2">Points</th>
-                                        <th className="py-2">GitHub</th>
-                                        <th className="py-2">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {leaderboardData
-                                        .filter(contributor => contributor.timeframe === filterTimeFrame)
-                                        .map((contributor, index) => (
-                                            <tr key={index} className="border-b border-gray-600 hover:bg-gray-700">
-                                                <td className="py-3">{index + 1}</td>
-                                                <td className="py-3">{contributor.username}</td>
-                                                <td className="py-3">{contributor.contributions}</td>
-                                                <td className="py-3">{contributor.points}</td>
-                                                <td className="py-3">
-                                                    <a href={`https://github.com/${contributor.github}`} target="_blank" rel="noopener noreferrer">
-                                                        <FaGithub className="text-white" />
-                                                    </a>
-                                                </td>
-                                                <td className="py-3">
-                                                    <button
-                                                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-400"
-                                                        onClick={() => viewContributorDetails(contributor)}
-                                                    >
-                                                        View Details
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
-                        </motion.div>
-                    )}
-                </section>
-            </div>
+            <Leaderboard />
 
             {/* Footer Section */}
             <footer className="bg-gray-900 py-6 mt-12">
