@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogIn } from 'lucide-react';
 import { Link } from 'react-scroll';
 import LoginModal from '../Components/LoginModal.jsx';
 import background from '../assets/background.png';
-import { motion } from 'framer-motion'; 
-import { FaGithub, FaLinkedin, FaTwitter, FaYoutube } from 'react-icons/fa';
+import { motion, useAnimation } from 'framer-motion'; 
+import { FaGithub, FaLinkedin, FaTwitter, FaYoutube, FaChartLine, FaRobot, FaUserFriends } from 'react-icons/fa';
 import Leaderboard from '../Components/Leaderboard.jsx';
 
 function App() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const controls = useAnimation();
 
-    const leaderboardData = [
-        { rank: 1, username: 'JohnDoe', points: 1500 },
-        { rank: 2, username: 'JaneSmith', points: 1350 },
-        { rank: 3, username: 'CoderX', points: 1200 },
-        { rank: 4, username: 'DevMaster', points: 1100 },
-        { rank: 5, username: 'AlphaGeek', points: 1000 },
-    ];
+    useEffect(() => {
+        controls.start(i => ({
+            opacity: 1,
+            y: 0,
+            transition: { delay: i * 0.3 }
+        }));
+    }, [controls]);
+
+    const featureIcons = [FaChartLine, FaRobot, FaUserFriends];
 
     return (
         <div>
@@ -35,30 +38,49 @@ function App() {
                     </div>
                     <button 
                         onClick={() => setIsModalOpen(true)} 
-                        className="bg-blue-700 text-white px-4 py-1.5 rounded-full font-semibold text-lg flex items-center hover:bg-blue-600"
+                        className="bg-blue-700 text-white px-4 py-1.5 rounded-full font-semibold text-lg flex items-center hover:bg-blue-800 hover:scale-105 transform transition-transform duration-300" 
                     >
                         <LogIn className="mr-2 h-6 w-6" /> Login
                     </button>
                 </div>
             </nav>
 
-            {/* Login Modal */}
             <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
             {/* Main Content */}
             <div className="bg-gray-100">
+
                 {/* Hero Section */}
-                 <section id="home" className="relative flex flex-col items-center justify-center h-screen bg-[rgb(40,54,82)] text-white">
-                    <img src={background} alt="background" className="absolute inset-0 ml-auto h-full object-cover bg-blend-overlay opacity-50" />
+                <section id="home" className="relative flex flex-col items-center justify-center h-screen bg-[rgb(40,54,82)] text-white overflow-hidden">
+                    <motion.img 
+                        src={background} 
+                        alt="background" 
+                        className="absolute inset-0 ml-auto h-full object-cover bg-blend-overlay opacity-50"
+                        initial={{ scale: 1.2 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
+                    />
                     <motion.div 
                         className="relative z-10 flex flex-col items-center text-center px-4"
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1.2, ease: 'easeOut' }}
                     >
-                        <FaGithub className="h-36 w-36 mb-6 animate-bounce" />
+                        <motion.div
+                            animate={{
+                                rotateY: [0, 360],
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                repeatType: "loop",
+                                ease: "linear"
+                            }}
+                        >
+                            <FaGithub className="h-36 w-36 mb-6" />
+                        </motion.div>
                         <motion.h1
-                            className="text-6xl font-extrabold"
+                            className="text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600"
                             initial={{ y: -50, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 1 }}
@@ -66,56 +88,78 @@ function App() {
                             Track the Future
                         </motion.h1>
                         <motion.p 
-                            className="mt-4 text-2xl text-gray-300"
+                            className="mt-4 text-3xl text-gray-300"
                             initial={{ y: 50, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 1 }}
                         >
                             Stay ahead with real-time rankings & insights
                         </motion.p>
-                        <motion.button
-                            className="mt-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:scale-105 transform transition duration-300"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            Get Started
-                        </motion.button>
+                        <a href="https://github.com/juspay/hyperswitch" target="_blank" rel="noopener noreferrer">
+                            <motion.button
+                                className="mt-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-xl hover:shadow-lg"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Get Started
+                            </motion.button>
+                        </a>
                     </motion.div>
 
                     <motion.div 
-                        className="absolute bottom-10 w-40 h-1 bg-gradient-to-r from-blue-500 to-purple-600"
+                        className="absolute bottom-10 w-60 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
                         transition={{ duration: 1.5, delay: 0.8, ease: 'easeOut' }}
                     />
                 </section>
 
-                {/* Updated Features Section */}
-                <section id="features" className="py-20 bg-white">
+                {/* Features Section */}
+                <section id="features" className="py-32 bg-white">
                     <div className="container mx-auto px-4">
                         <motion.h2 
-                            className="text-4xl font-bold text-center mb-12 text-gray-800"
+                            className="text-5xl font-bold text-center mb-16 text-gray-800"
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 1 }}
                         >
                             Cutting-Edge Features
                         </motion.h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
                             {[
-                                { title: 'Real-Time Insights', description: 'Get instant updates on community activity with real-time tracking.' },
-                                { title: 'Algorithmic Ranking', description: 'Our AI-driven algorithm assigns points based on contribution complexity.' },
-                                { title: 'Seamless User Experience', description: 'Interactive, fast, and easy-to-navigate features.' },
+                                { 
+                                    title: 'Real-Time Insights', 
+                                    description: 'Get instant updates on community activity with our advanced real-time tracking system. Stay informed about every contribution as it happens.',
+                                    icon: FaChartLine
+                                },
+                                { 
+                                    title: 'AI-Powered Ranking', 
+                                    description: 'Our sophisticated AI algorithm assigns points based on contribution complexity, ensuring fair and accurate recognition of developer efforts.',
+                                    icon: FaRobot
+                                },
+                                { 
+                                    title: 'Seamless Integration', 
+                                    description: 'Effortlessly connect with popular platforms and enjoy a smooth, intuitive interface designed for developers of all levels.',
+                                    icon: FaUserFriends
+                                },
                             ].map((feature, index) => (
                                 <motion.div
                                     key={index}
-                                    className="bg-[rgb(30,44,72)] p-8 rounded-lg shadow-xl hover:shadow-2xl transition duration-300"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.7 + index * 0.3 }}
+                                    className="bg-gradient-to-br from-[rgb(30,44,72)] to-[rgb(40,54,82)] p-8 rounded-xl shadow-xl hover:shadow-2xl transition duration-300 group"
+                                    initial={{ opacity: 0, scale: 0.8, y: 50 }}
+                                    animate={controls}
+                                    custom={index}
+                                    whileHover={{ scale: 1.05 }}
                                 >
-                                    <h3 className="text-2xl font-bold mb-4 text-white">{feature.title}</h3>
-                                    <p className="text-gray-300">{feature.description}</p>
+                                    <motion.div
+                                        className="text-6xl text-blue-400 mb-6 group-hover:text-purple-400 transition-colors duration-300"
+                                        whileHover={{ rotate: 360 }}
+                                        transition={{ duration: 0.5 }}
+                                    >
+                                        <feature.icon />
+                                    </motion.div>
+                                    <h3 className="text-3xl font-bold mb-4 text-white">{feature.title}</h3>
+                                    <p className="text-gray-300 text-lg leading-relaxed">{feature.description}</p>
                                 </motion.div>
                             ))}
                         </div>
