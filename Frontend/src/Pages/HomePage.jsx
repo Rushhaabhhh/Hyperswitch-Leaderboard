@@ -1,58 +1,118 @@
 import React, { useState, useEffect } from 'react';
-import { FaUserCircle, FaSort, FaFilter, FaGithub } from 'react-icons/fa';
+import axios from 'axios';
+import { FaUserCircle, FaGithub, FaPencilAlt } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import Leaderboard from '../Components/Leaderboard';
 
 const HomePage = () => {
-    const [leaderboardData, setLeaderboardData] = useState([]);
-    const [filterTimeFrame, setFilterTimeFrame] = useState('monthly');
-    const [filterCategory, setFilterCategory] = useState('all');
-    const [loading, setLoading] = useState(true);  // Loading state
-    const [error, setError] = useState(null);      // Error state
+    const [user, setUser] = useState(null);
+    const [githubData, setGithubData] = useState(null);
+    const [backgroundImage, setBackgroundImage] = useState(() => {
+        return localStorage.getItem('backgroundImage') || null;
+    });
+    const [profileImage, setProfileImage] = useState(null);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [newUsername, setNewUsername] = useState('');
+    const [isNameHovered, setIsNameHovered] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch('http://localhost:5000/auth/user');
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                setLeaderboardData(data); 
+                const userResponse = await axios.get('http://localhost:5000/auth/user');
+                setUser(userResponse.data);
+                setNewUsername(userResponse.data.username);
+
+                const githubResponse = await axios.get('http://localhost:5000/auth/github-data');
+                setGithubData(githubResponse.data);
             } catch (error) {
                 setError(error.message);
             } finally {
-                setLoading(false);  // Set loading to false once the fetch is complete
+                setLoading(false);
             }
         };
         fetchData();
     }, []);
 
-    const handleTimeFrameChange = (e) => {
-        setFilterTimeFrame(e.target.value);
+    const handleProfileImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                setProfileImage(reader.result);
+                try {
+                    await axios.put(`http://localhost:5000/auth/update/${user.id}`, { 
+                        image: reader.result
+                    });
+                } catch (error) {
+                    console.error('Error updating profile image:', error);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
-    const handleCategoryChange = (e) => {
-        setFilterCategory(e.target.value);
+    const handleBackgroundImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setBackgroundImage(reader.result);
+                localStorage.setItem('backgroundImage', reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
-    const fetchContributorData = async (username) => {
-        return [
-            { type: 'Pull Request', description: 'Fixed bug in payment API', date: '2024-10-01' },
-            { type: 'Issue', description: 'Resolved issue #123', date: '2024-09-29' },
-        ];
+    const handleUsernameChange = async () => {
+        try {
+            await axios.put(`http://localhost:5000/auth/update/${user.id}`, { username: newUsername });
+            setIsEditingName(false);
+        } catch (error) {
+            console.error('Error updating username:', error);
+        }
     };
 
-    const viewContributorDetails = async (contributor) => {
-        const contributions = await fetchContributorData(contributor.username);
-        console.log('Contributions:', contributions);
+    const handleGitHubLogin = () => {
+        window.location.href = 'http://localhost:5000/auth/github';
     };
+
+    const handleLogout = async () => {
+        try {
+            await axios.get('http://localhost:5000/auth/logout');
+            setUser(null);
+            setGithubData(null);
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    };
+
+    if (loading) {
+        return <p className="text-white text-center">Loading...</p>;
+    }
+
+    if (error) {
+        return <p className="text-white text-center">Error: {error}</p>;
+    }
+
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <button 
+                    onClick={handleGitHubLogin}
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded flex items-center"
+                >
+                    <FaGithub className="mr-2" />
+                    Login with GitHub
+                </button>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
-            {/* Navbar */}
+        <div className="min-h-screen bg-gray-900">
             <nav className="bg-black py-4 shadow-md fixed w-full top-0 z-10">
-                <div className="container mx-auto px-6 flex justify-between items-center">
+                <div className="container pt-2 flex justify-between items-center">
                     <div>
                         <motion.img
                             src="https://hyperswitch.io/logos/hyperswitch.svg"
@@ -62,53 +122,131 @@ const HomePage = () => {
                             transition={{ duration: 1.5 }}
                         />
                     </div>
+                </div>
+            </nav>
+            <div className="relative top-24">
+                <div
+                    className="h-64 bg-cover bg-center relative group"
+                    style={{ backgroundImage: `url(${backgroundImage || githubData?.avatar_url})` }}
+                >
+                    <label htmlFor="background-input" className="cursor-pointer">
+                        <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-0 group-hover:opacity-80" size={40} />
+                    </label>
+                    <input
+                        id="background-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBackgroundImageUpload}
+                        className="hidden"
+                    />
+                </div>
 
-                    <div className="flex items-center bg-gray-800 px-4 py-2 rounded-lg">
+                <div className="absolute top-28 left-8 flex flex-col items-center">
+                    <div className="relative group">
+                        <img
+                            src={profileImage || githubData?.avatar_url}
+                            alt={`${user.username}'s profile`}
+                            className="h-44 w-44 rounded-full border-4 border-gray-900 shadow-lg"
+                        />
+                        <label htmlFor="profile-input" className="cursor-pointer">
+                            <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-0 group-hover:opacity-80" size={40} />
+                        </label>
                         <input
-                            type="text"
-                            placeholder="Search Contributors..."
-                            className="bg-gray-800 text-white px-2 py-1 rounded-lg outline-none"
+                            id="profile-input"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfileImageUpload}
+                            className="hidden"
                         />
                     </div>
 
-                    <div className="flex items-center space-x-6">
-                        <a href="#leaderboard" className="text-gray-300 hover:text-white">Leaderboard</a>
-                        <a href="#about" className="text-gray-300 hover:text-white">About</a>
+                    <div
+                        className="mt-2 text-white"
+                        onMouseEnter={() => setIsNameHovered(true)}
+                        onMouseLeave={() => setIsNameHovered(false)}
+                    >
+                        {isEditingName ? (
+                            <div className="flex items-center">
+                                <input
+                                    type="text"
+                                    value={newUsername}
+                                    onChange={(e) => setNewUsername(e.target.value)}
+                                    className="bg-gray-700 text-white rounded p-1 text-2xl font-bold"
+                                />
+                                <button
+                                    onClick={handleUsernameChange}
+                                    className="ml-2 text-green-400"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center">
+                                <h1 className="text-4xl font-bold">{newUsername}</h1>
+                                {isNameHovered && (
+                                    <FaPencilAlt
+                                        className="ml-2 text-white cursor-pointer"
+                                        size={20}
+                                        onClick={() => setIsEditingName(true)}
+                                    />
+                                )}
+                            </div>
+                        )}
 
-                        <motion.div
-                            initial={{ scale: 0.9 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 100 }}
-                        >
-                            <button className="flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700">
-                                <FaUserCircle className="h-6 w-6 text-white" />
-                                <span className="text-white">Profile</span>
-                            </button>
-                        </motion.div>
+                        <div className="flex items-center space-x-6 mt-2">
+                            <p className="text-gray-400 text-lg">
+                                {githubData?.name}
+                            </p>
+                            <p className="text-gray-400 text-lg">
+                                Joined {new Date(user.created_at).toLocaleDateString()}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </nav>
+            </div>
 
-            {/* Hero Section */}
-            <motion.section
-                className="h-96 flex flex-col justify-center items-center text-center mt-16"
-                initial={{ opacity: 0, y: -50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1 }}
-            >
-                <h1 className="text-5xl font-bold text-white">Top External Contributors</h1>
-                <p className="mt-4 text-gray-400">Recognizing the best contributors in our community</p>
-                <motion.button
-                    className="mt-8 px-6 py-3 bg-blue-500 rounded-lg text-white font-semibold hover:bg-blue-400"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+            {/* GitHub Stats Section */}
+            <div className="mt-64 mx-4">
+                <h2 className="text-2xl font-semibold text-white mb-4">GitHub Stats</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+                        <h3 className="text-lg font-semibold text-white mb-2">Public Repos</h3>
+                        <p className="text-3xl text-white">{githubData?.public_repos}</p>
+                    </div>
+                    <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+                        <h3 className="text-lg font-semibold text-white mb-2">Followers</h3>
+                        <p className="text-3xl text-white">{githubData?.followers}</p>
+                    </div>
+                    <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+                        <h3 className="text-lg font-semibold text-white mb-2">Following</h3>
+                        <p className="text-3xl text-white">{githubData?.following}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* GitHub README Section */}
+            <div className="mt-8 mx-4">
+                <h2 className="text-2xl font-semibold text-white mb-4">GitHub README</h2>
+                <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+                    <div className="prose prose-invert">
+                        {githubData?.readme ? (
+                            <div dangerouslySetInnerHTML={{ __html: githubData.readme }} />
+                        ) : (
+                            <p className="text-gray-400">No README available.</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Logout Button */}
+            <div className="mt-8 mx-4">
+                <button 
+                    onClick={handleLogout}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                 >
-                    View Leaderboard
-                </motion.button>
-            </motion.section>
-
-            {/* Leaderboard Section */}
-            <Leaderboard />
+                    Logout
+                </button>
+            </div>
 
             {/* Footer Section */}
             <footer className="bg-gray-900 py-6 mt-12">

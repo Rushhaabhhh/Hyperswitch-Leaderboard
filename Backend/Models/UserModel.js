@@ -12,6 +12,10 @@ const UserSchema = new Schema({
   },
   email: {
     type: String
+  },
+  type: {
+    enum : ['user', 'admin', 'superadmin'],
+    default: 'user'
   }
 });
 

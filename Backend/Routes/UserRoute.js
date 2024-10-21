@@ -11,4 +11,6 @@ router.get('/user', UserController.getUser);
 
 router.get('/logout', UserController.logout);
 
+router.get('/github-data', UserController.getUserGitHubData);
+
 module.exports = router;
