@@ -167,8 +167,9 @@ function App() {
                 </section>
 
                 {/*Leaderboard Section */}
-                <Leaderboard owner="juspay" repo="hyperswitch" />
-                
+                <div id="features">
+                    <Leaderboard owner="juspay" repo="hyperswitch" />
+                </div>
 
                 {/* Footer */}
                 <section id="contact" className="py-20 bg-gray-800">

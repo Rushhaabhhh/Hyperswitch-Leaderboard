@@ -1,27 +1,16 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Search, ChevronDown, Filter, Github } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Search, ChevronDown, ArrowUpDown, Github, Trophy } from 'lucide-react';
 import axios from 'axios';
-import { motion } from 'framer-motion';
-import debounce from 'lodash/debounce';
-
-// New Loader component
-const Loader = () => (
-  <motion.div
-    className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
-    animate={{ rotate: 360 }}
-    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-  />
-);
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeFrame, setTimeFrame] = useState('weekly');
   const [expandedUser, setExpandedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState('points_desc');
 
   const owner = 'juspay';
   const repo = 'hyperswitch';
@@ -31,14 +20,13 @@ const Leaderboard = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`http://localhost:5000/leaderboard/repo/${owner}/${repo}?timeFrame=${timeFrame}`);
-        const { leaderboard = [], totalItems = 0 } = response.data;
-
+        const response = await axios.get(
+          `http://localhost:5000/leaderboard/repo/${owner}/${repo}?timeFrame=${timeFrame}&sort=${sortOrder}`
+        );
+        const { leaderboard = [] } = response.data;
         setLeaderboardData(leaderboard);
         setFilteredData(leaderboard);
-        setTotalItems(totalItems);
       } catch (err) {
-        console.error('Error fetching data:', err);
         setError('Failed to fetch data');
       } finally {
         setLoading(false);
@@ -46,30 +34,48 @@ const Leaderboard = () => {
     };
 
     fetchData();
-  }, [timeFrame]);
-
-  const debouncedSearch = useCallback(
-    debounce((query) => {
-      const filtered = leaderboardData.filter(contributor =>
-        contributor.username.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }, 300),
-    [leaderboardData]
-  );
+  }, [timeFrame, sortOrder]);
 
   useEffect(() => {
-    debouncedSearch(searchQuery);
-  }, [searchQuery, debouncedSearch]);
+    const filtered = leaderboardData.filter(contributor =>
+      contributor.username.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredData(filtered);
+  }, [searchQuery, leaderboardData]);
 
   const handleToggleExpand = (username) => {
     setExpandedUser(expandedUser === username ? null : username);
   };
 
+  const toggleSort = () => {
+    setSortOrder(prev => 
+      prev === 'points_desc' ? 'points_asc' : 'points_desc'
+    );
+  };
+
+  const getPointsColor = (points) => {
+    if (points >= 100) return 'text-yellow-400';
+    if (points >= 50) return 'text-blue-400';
+    return 'text-white';
+  };
+
+  const getRankBadge = (rank) => {
+    switch(rank) {
+      case 1:
+        return <Trophy className="w-6 h-6 text-yellow-400" />;
+      case 2:
+        return <Trophy className="w-6 h-6 text-gray-400" />;
+      case 3:
+        return <Trophy className="w-6 h-6 text-amber-600" />;
+      default:
+        return rank;
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-[rgb(40,54,82)]">
-        <Loader />
+      <div className="flex justify-center items-center h-screen bg-gray-900">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -78,165 +84,157 @@ const Leaderboard = () => {
     return <div className="mt-4 text-center text-red-500">{error}</div>;
   }
 
-  const getContributionTypeIcon = (type) => {
-    switch (type.toLowerCase()) {
-      case 'bug':
-        return '🐛';
-      case 'issue':
-        return '❗';
-      case 'feature':
-        return '✨';
-      case 'documentation':
-        return '📚';
-      default:
-        return '🔧';
-    }
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="container mx-auto mt-2 px-6 py-8 bg-[rgb(40,54,82)] min-h-screen"
-    >
-      <h2 className="text-5xl font-bold text-center mb-12 text-white">Leaderboard</h2>
+    <div className="container mx-auto px-4 py-8 bg-gray-900 min-h-screen">
+      <div className="text-center mb-8">
+        
+        <h2 className="text-4xl font-bold text-white mb-2">Community Contributors</h2>
+        <p className="text-gray-400">Recognizing our valuable contributors</p>
+      </div>
 
-      <div className="flex items-center justify-between mt-4">
-        <div className="relative w-152">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
           <select
             value={timeFrame}
             onChange={(e) => setTimeFrame(e.target.value)}
-            className="p-3 pl-4 pr-10 border border-gray-800 rounded-full bg-gray-700  text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-in-out shadow-sm hover:shadow-md w-full"
+            className="w-full p-3 pl-4 pr-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
           </select>
-          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-white">
-            <ChevronDown size={18} />
-          </span>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
 
-        <div className="relative w-1/3">
+        <div className="relative flex-1">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by username"
-            className="p-3 pl-10 rounded-full text-md  bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg w-full"
+            placeholder="Search contributors..."
+            className="w-full p-3 pl-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
           />
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <Search size={18} />
-          </span>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center bg-blue-700 text-white px-4 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 ease-in-out shadow-sm hover:shadow-md"
+        <button
+          onClick={toggleSort}
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
         >
-          <span className="mr-2">
-            <Filter size={22} />
-          </span>
-          Sort
-        </motion.button>
+          <ArrowUpDown className="w-5 h-5" />
+          {sortOrder === 'points_desc' ? 'Highest Points' : 'Lowest Points'}
+        </button>
       </div>
 
-      {filteredData.length > 0 ? (
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mt-6 bg-gray-700 rounded-lg shadow overflow-hidden"
-        >
-          <table className="min-w-full">
-            <thead className="bg-gray-800">
+      <div className="bg-gray-800 rounded-xl shadow-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-900">
               <tr>
-                <th className="px-6 py-3 text-left text-md font-medium text-white uppercase tracking-wider">Rank</th>
-                <th className="px-6 py-3 text-left text-md font-medium text-white uppercase tracking-wider">Username</th>
-                <th className="px-6 py-3 text-left text-md font-medium text-white uppercase tracking-wider">GitHub</th>
-                <th className="px-6 py-3 text-left text-md font-medium text-white uppercase tracking-wider">Contributions</th>
-                <th className="px-6 py-3 text-left text-md font-medium text-white uppercase tracking-wider">Points</th>
-                <th className="px-6 py-3 text-left text-md font-medium text-white uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Rank</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Contributor</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Points</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Contributions</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Details</th>
               </tr>
             </thead>
-            <tbody className="bg-gray-700 divide-y divide-gray-600">
+            <tbody className="divide-y divide-gray-700">
               {filteredData.map((contributor, index) => (
                 <React.Fragment key={contributor.username}>
-                  <motion.tr
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-white">{index + 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-white">{contributor.username}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <motion.a
-                        href={`https://github.com/${contributor.username}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="text-white hover:text-blue-300 flex items-center"
-                      >
-                        <Github size={20} className="mr-2" />
-                        <span className="hidden md:inline">{contributor.username}</span>
-                      </motion.a>
+                  <tr className="hover:bg-gray-700 transition-colors">
+                    <td className="px-6 py-4 text-gray-300">
+                      {getRankBadge(index + 1)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-white">{contributor.contributions}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-white">{contributor.points}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={`https://github.com/${contributor.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 flex items-center gap-2"
+                        >
+                          <Github className="w-5 h-5" />
+                          {contributor.username}
+                        </a>
+                        {contributor.isFirstTime && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">
+                            First Time!
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className={`px-6 py-4 font-semibold ${getPointsColor(contributor.points)}`}>
+                      {contributor.points} pts
+                    </td>
+                    <td className="px-6 py-4 text-gray-300">
+                      {contributor.contributions}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
                         onClick={() => handleToggleExpand(contributor.username)}
                         className="text-blue-400 hover:text-blue-300"
                       >
-                        {expandedUser === contributor.username ? 'Hide Details' : 'Show Details'}
-                      </motion.button>
+                        {expandedUser === contributor.username ? 'Hide' : 'Show'}
+                      </button>
                     </td>
-                  </motion.tr>
+                  </tr>
                   {expandedUser === contributor.username && (
-                    <motion.tr
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <td colSpan="6" className="px-6 py-4 bg-gray-800">
-                        <h4 className="font-semibold mb-2 text-white">Contribution Details:</h4>
-                        <ul className="space-y-2 text-white">
+                    <tr>
+                      <td colSpan="5" className="px-6 py-4 bg-gray-750">
+                        <div className="space-y-3">
                           {contributor.details.map((detail, idx) => (
-                            <li key={idx} className="flex items-start">
-                              <span className="mr-2">{getContributionTypeIcon(detail.type)}</span>
-                              <span className="font-medium mr-2">{detail.type}:</span>
-                              <a 
-                                href={detail.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="text-blue-400 hover:underline mr-2"
-                              >
-                                {detail.title}
-                              </a>
-                              <span className="text-green-400">({detail.points} points)</span>
-                            </li>
+                            <div key={idx} className="flex items-start gap-4 text-gray-300">
+                              <div className="flex-1">
+                                <a 
+                                  href={detail.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:underline"
+                                >
+                                  {detail.title}
+                                </a>
+                                <div className="flex gap-2 mt-1">
+                                  {detail.labels.map((label, labelIdx) => (
+                                    <span 
+                                      key={labelIdx}
+                                      className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400"
+                                    >
+                                      {label}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="text-sm">
+                                <div className="font-medium text-green-400">
+                                  +{detail.pointsEarned} points
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  {Object.entries(detail.pointBreakdown).map(([key, value]) => 
+                                    key !== 'total' && value > 0 && (
+                                      <div key={key}>
+                                        {key.replace(/([A-Z])/g, ' $1').trim()}: +{value}
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
                       </td>
-                    </motion.tr>
+                    </tr>
                   )}
                 </React.Fragment>
               ))}
             </tbody>
           </table>
-        </motion.div>
-      ) : (
-        <div className="mt-4 text-center text-white">No contributors found.</div>
-      )}
+        </div>
+      </div>
 
-      <p className="mt-6 text-xl text-white">Total External Contributors: {totalItems}</p>
-    </motion.div>
+      <div className="mt-6 text-center text-gray-400">
+        Total Contributors: {filteredData.length}
+      </div>
+    </div>
   );
 };
 

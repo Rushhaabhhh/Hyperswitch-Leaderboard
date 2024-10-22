@@ -1,75 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { FaUserCircle, FaGithub, FaPencilAlt } from 'react-icons/fa';
+import { FaPencilAlt, FaGithub } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 // Dummy user data
 const dummyUser = {
-    username: 'john_doe',
+    username: 'JohnDoe',
     created_at: '2023-01-01',
-    email: 'john@example.com',
-    avatar_url: 'https://via.placeholder.com/150',
-    name: 'John Doe',
-    bio: 'Web developer and open-source enthusiast.',
-    location: 'New York, USA',
-    public_repos: 12,
-    followers: 100,
-    following: 50,
+    email: 'johndoe@example.com',
+    profileImage: 'https://png.pngtree.com/png-clipart/20230927/original/pngtree-man-avatar-image-for-profile-png-image_13001882.png',
+    githubData: {
+        avatar_url: 'https://png.pngtree.com/png-clipart/20230927/original/pngtree-man-avatar-image-for-profile-png-image_13001882.png',
+        name: 'John Doe',
+        bio: 'Software Developer',
+        location: 'San Francisco',
+        public_repos: 10,
+        followers: 5,
+        following: 2,
+    }
 };
 
 const HomePage = () => {
     const [user, setUser] = useState(dummyUser);
-    const [githubData, setGithubData] = useState({
-        avatar_url: dummyUser.avatar_url,
-        name: dummyUser.name,
-        bio: dummyUser.bio,
-        location: dummyUser.location,
-        public_repos: dummyUser.public_repos,
-        followers: dummyUser.followers,
-        following: dummyUser.following,
+    const [backgroundImage, setBackgroundImage] = useState(() => {
+        return localStorage.getItem('backgroundImage') || null;
     });
-    const [profileImage, setProfileImage] = useState(dummyUser.avatar_url);
     const [isEditingName, setIsEditingName] = useState(false);
-    const [newUsername, setNewUsername] = useState(dummyUser.username);
+    const [newUsername, setNewUsername] = useState(user.username);
     const [isNameHovered, setIsNameHovered] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Simulate loading
-        setLoading(true);
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 1000);
+        // Setting the username when component mounts
+        setNewUsername(user.username);
+    }, [user]);
 
-        return () => clearTimeout(timer);
-    }, []);
-
-    const handleProfileImageUpload = (e) => {
+    const handleBackgroundImageUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Simulate image upload
-            const url = URL.createObjectURL(file);
-            setProfileImage(url);
+            const imageUrl = URL.createObjectURL(file); // Create a local URL for the image
+            setBackgroundImage(imageUrl);
+            localStorage.setItem('backgroundImage', imageUrl); // Save to local storage
         }
     };
 
     const handleUsernameChange = () => {
+        setUser(prev => ({ ...prev, username: newUsername }));
         setIsEditingName(false);
-        setUser((prev) => ({ ...prev, username: newUsername }));
     };
 
-    const handleLogout = () => {
-        setUser(null);
-        setGithubData(null);
+    const handleGitHubLogin = () => {
+        // Placeholder for GitHub login functionality
+        window.location.href = 'http://localhost:5000/auth/github';
     };
-
-    if (loading) {
-        return <p className="text-white text-center">Loading...</p>;
-    }
-
-    if (error) {
-        return <p className="text-white text-center">Error: {error}</p>;
-    }
 
     return (
         <div className="min-h-screen bg-gray-900">
@@ -88,40 +70,27 @@ const HomePage = () => {
             </nav>
             <div className="relative top-24">
                 <div
-                    className="h-64 bg-cover bg-center relative"
-                    style={{ backgroundImage: `url(${profileImage})` }}
+                    className="h-64 bg-cover bg-center relative group"
+                    style={{ backgroundImage: `url(${backgroundImage || user.githubData.avatar_url})` }}
                 >
-                    <label htmlFor="profile-input" className="cursor-pointer">
-                        <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-80" size={40} />
+                    <label htmlFor="background-input" className="cursor-pointer">
+                        <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-0 group-hover:opacity-80" size={40} />
                     </label>
                     <input
-                        id="profile-input"
+                        id="background-input"
                         type="file"
                         accept="image/*"
-                        onChange={handleProfileImageUpload}
+                        onChange={handleBackgroundImageUpload}
                         className="hidden"
                     />
                 </div>
 
                 <div className="absolute top-28 left-8 flex flex-col items-center">
-                    <div className="relative group">
-                        <img
-                            src={profileImage}
-                            alt={`${user.username}'s profile`}
-                            className="h-44 w-44 rounded-full border-4 border-gray-900 shadow-lg"
-                        />
-                        <label htmlFor="profile-input" className="cursor-pointer">
-                            <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-80" size={40} />
-                        </label>
-                        <input
-                            id="profile-input"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleProfileImageUpload}
-                            className="hidden"
-                        />
-                    </div>
-
+                    <img
+                        src='https://png.pngtree.com/png-clipart/20230927/original/pngtree-man-avatar-image-for-profile-png-image_13001882.png'
+                        alt={`${user.username}'s profile`}
+                        className="h-44 w-44 rounded-full border-4 border-gray-900 shadow-lg"
+                    />
                     <div
                         className="mt-2 text-white"
                         onMouseEnter={() => setIsNameHovered(true)}
@@ -154,11 +123,8 @@ const HomePage = () => {
                                 )}
                             </div>
                         )}
-
                         <div className="flex items-center space-x-6 mt-2">
-                            <p className="text-gray-400 text-lg">
-                                {githubData.name}
-                            </p>
+                            <p className="text-gray-400 text-lg">{user.githubData.name}</p>
                             <p className="text-gray-400 text-lg">
                                 Joined {new Date(user.created_at).toLocaleDateString()}
                             </p>
@@ -173,15 +139,15 @@ const HomePage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
                         <h3 className="text-lg font-semibold text-white mb-2">Public Repos</h3>
-                        <p className="text-3xl text-white">{githubData.public_repos}</p>
+                        <p className="text-3xl text-white">{user.githubData.public_repos}</p>
                     </div>
                     <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
                         <h3 className="text-lg font-semibold text-white mb-2">Followers</h3>
-                        <p className="text-3xl text-white">{githubData.followers}</p>
+                        <p className="text-3xl text-white">{user.githubData.followers}</p>
                     </div>
                     <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
                         <h3 className="text-lg font-semibold text-white mb-2">Following</h3>
-                        <p className="text-3xl text-white">{githubData.following}</p>
+                        <p className="text-3xl text-white">{user.githubData.following}</p>
                     </div>
                 </div>
             </div>
@@ -189,10 +155,10 @@ const HomePage = () => {
             {/* Logout Button */}
             <div className="mt-8 mx-4">
                 <button 
-                    onClick={handleLogout}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                    onClick={handleGitHubLogin}
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                 >
-                    Logout
+                    Login with GitHub
                 </button>
             </div>
 

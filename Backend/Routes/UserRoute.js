@@ -10,9 +10,5 @@ router.get('/github', UserController.githubLogin);
 router.get('/github/callback', UserController.githubCallback);
 router.post('/logout', UserController.logout);
 
-// Profile routes
-router.get('/user/profile', UserController.getProfile);
-router.put('/user/profile/username', UserController.updateUsername);
-router.put('/user/profile/image', upload.single('image'), UserController.updateProfileImage);
 
 module.exports = router;
