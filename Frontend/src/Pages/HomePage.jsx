@@ -1,90 +1,66 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { FaUserCircle, FaGithub, FaPencilAlt } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
+// Dummy user data
+const dummyUser = {
+    username: 'john_doe',
+    created_at: '2023-01-01',
+    email: 'john@example.com',
+    avatar_url: 'https://via.placeholder.com/150',
+    name: 'John Doe',
+    bio: 'Web developer and open-source enthusiast.',
+    location: 'New York, USA',
+    public_repos: 12,
+    followers: 100,
+    following: 50,
+};
+
 const HomePage = () => {
-    const [user, setUser] = useState(null);
-    const [githubData, setGithubData] = useState(null);
-    const [backgroundImage, setBackgroundImage] = useState(() => {
-        return localStorage.getItem('backgroundImage') || null;
+    const [user, setUser] = useState(dummyUser);
+    const [githubData, setGithubData] = useState({
+        avatar_url: dummyUser.avatar_url,
+        name: dummyUser.name,
+        bio: dummyUser.bio,
+        location: dummyUser.location,
+        public_repos: dummyUser.public_repos,
+        followers: dummyUser.followers,
+        following: dummyUser.following,
     });
-    const [profileImage, setProfileImage] = useState(null);
+    const [profileImage, setProfileImage] = useState(dummyUser.avatar_url);
     const [isEditingName, setIsEditingName] = useState(false);
-    const [newUsername, setNewUsername] = useState('');
+    const [newUsername, setNewUsername] = useState(dummyUser.username);
     const [isNameHovered, setIsNameHovered] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const userResponse = await axios.get('http://localhost:5000/auth/user');
-                setUser(userResponse.data);
-                setNewUsername(userResponse.data.username);
+        // Simulate loading
+        setLoading(true);
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 1000);
 
-                const githubResponse = await axios.get('http://localhost:5000/auth/github-data');
-                setGithubData(githubResponse.data);
-            } catch (error) {
-                setError(error.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+        return () => clearTimeout(timer);
     }, []);
 
-    const handleProfileImageUpload = async (e) => {
+    const handleProfileImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                setProfileImage(reader.result);
-                try {
-                    await axios.put(`http://localhost:5000/auth/update/${user.id}`, { 
-                        image: reader.result
-                    });
-                } catch (error) {
-                    console.error('Error updating profile image:', error);
-                }
-            };
-            reader.readAsDataURL(file);
+            // Simulate image upload
+            const url = URL.createObjectURL(file);
+            setProfileImage(url);
         }
     };
 
-    const handleBackgroundImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setBackgroundImage(reader.result);
-                localStorage.setItem('backgroundImage', reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
+    const handleUsernameChange = () => {
+        setIsEditingName(false);
+        setUser((prev) => ({ ...prev, username: newUsername }));
     };
 
-    const handleUsernameChange = async () => {
-        try {
-            await axios.put(`http://localhost:5000/auth/update/${user.id}`, { username: newUsername });
-            setIsEditingName(false);
-        } catch (error) {
-            console.error('Error updating username:', error);
-        }
-    };
-
-    const handleGitHubLogin = () => {
-        window.location.href = 'http://localhost:5000/auth/github';
-    };
-
-    const handleLogout = async () => {
-        try {
-            await axios.get('http://localhost:5000/auth/logout');
-            setUser(null);
-            setGithubData(null);
-        } catch (error) {
-            console.error('Error logging out:', error);
-        }
+    const handleLogout = () => {
+        setUser(null);
+        setGithubData(null);
     };
 
     if (loading) {
@@ -93,20 +69,6 @@ const HomePage = () => {
 
     if (error) {
         return <p className="text-white text-center">Error: {error}</p>;
-    }
-
-    if (!user) {
-        return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                <button 
-                    onClick={handleGitHubLogin}
-                    className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded flex items-center"
-                >
-                    <FaGithub className="mr-2" />
-                    Login with GitHub
-                </button>
-            </div>
-        );
     }
 
     return (
@@ -126,17 +88,17 @@ const HomePage = () => {
             </nav>
             <div className="relative top-24">
                 <div
-                    className="h-64 bg-cover bg-center relative group"
-                    style={{ backgroundImage: `url(${backgroundImage || githubData?.avatar_url})` }}
+                    className="h-64 bg-cover bg-center relative"
+                    style={{ backgroundImage: `url(${profileImage})` }}
                 >
-                    <label htmlFor="background-input" className="cursor-pointer">
-                        <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-0 group-hover:opacity-80" size={40} />
+                    <label htmlFor="profile-input" className="cursor-pointer">
+                        <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-80" size={40} />
                     </label>
                     <input
-                        id="background-input"
+                        id="profile-input"
                         type="file"
                         accept="image/*"
-                        onChange={handleBackgroundImageUpload}
+                        onChange={handleProfileImageUpload}
                         className="hidden"
                     />
                 </div>
@@ -144,12 +106,12 @@ const HomePage = () => {
                 <div className="absolute top-28 left-8 flex flex-col items-center">
                     <div className="relative group">
                         <img
-                            src={profileImage || githubData?.avatar_url}
+                            src={profileImage}
                             alt={`${user.username}'s profile`}
                             className="h-44 w-44 rounded-full border-4 border-gray-900 shadow-lg"
                         />
                         <label htmlFor="profile-input" className="cursor-pointer">
-                            <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-0 group-hover:opacity-80" size={40} />
+                            <FaPencilAlt className="absolute inset-0 m-auto text-white cursor-pointer opacity-80" size={40} />
                         </label>
                         <input
                             id="profile-input"
@@ -195,7 +157,7 @@ const HomePage = () => {
 
                         <div className="flex items-center space-x-6 mt-2">
                             <p className="text-gray-400 text-lg">
-                                {githubData?.name}
+                                {githubData.name}
                             </p>
                             <p className="text-gray-400 text-lg">
                                 Joined {new Date(user.created_at).toLocaleDateString()}
@@ -211,29 +173,15 @@ const HomePage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
                         <h3 className="text-lg font-semibold text-white mb-2">Public Repos</h3>
-                        <p className="text-3xl text-white">{githubData?.public_repos}</p>
+                        <p className="text-3xl text-white">{githubData.public_repos}</p>
                     </div>
                     <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
                         <h3 className="text-lg font-semibold text-white mb-2">Followers</h3>
-                        <p className="text-3xl text-white">{githubData?.followers}</p>
+                        <p className="text-3xl text-white">{githubData.followers}</p>
                     </div>
                     <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
                         <h3 className="text-lg font-semibold text-white mb-2">Following</h3>
-                        <p className="text-3xl text-white">{githubData?.following}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* GitHub README Section */}
-            <div className="mt-8 mx-4">
-                <h2 className="text-2xl font-semibold text-white mb-4">GitHub README</h2>
-                <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
-                    <div className="prose prose-invert">
-                        {githubData?.readme ? (
-                            <div dangerouslySetInnerHTML={{ __html: githubData.readme }} />
-                        ) : (
-                            <p className="text-gray-400">No README available.</p>
-                        )}
+                        <p className="text-3xl text-white">{githubData.following}</p>
                     </div>
                 </div>
             </div>
