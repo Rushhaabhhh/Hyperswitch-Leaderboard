@@ -1,173 +1,214 @@
-import React, { useState, useEffect } from 'react';
-import { LogIn } from 'lucide-react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { LogIn, Github } from 'lucide-react';
 import { Link } from 'react-scroll';
 import LoginModal from '../Components/LoginModal.jsx';
 import background from '../assets/background.png';
-import { motion, useAnimation } from 'framer-motion'; 
-import { FaGithub, FaLinkedin, FaTwitter, FaYoutube, FaChartLine, FaRobot, FaUserFriends } from 'react-icons/fa';
+import image from '../assets/aws.jpg';
+import { motion, useAnimation, useScroll, useTransform } from 'framer-motion';
+import { FaGithub, FaLinkedin, FaTwitter, FaYoutube, FaCode, FaStar, FaTrophy, FaUsers } from 'react-icons/fa';
 import Leaderboard from '../Components/Leaderboard.jsx';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
+
 
 function App() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const controls = useAnimation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const controls = useAnimation();
+  const { scrollYProgress } = useScroll();
+  const featuresRef = useRef(null);
+  const contributorsRef = useRef(null);
 
-    useEffect(() => {
-        controls.start(i => ({
-            opacity: 1,
-            y: 0,
-            transition: { delay: i * 0.3 }
-        }));
-    }, [controls]);
+  const features = [
+    {
+      icon: FaCode,
+      title: "Code Contributions",
+      description: "Track your impact through lines of code, commits, and meaningful contributions"
+    },
+    {
+      icon: FaCode,
+      title: "Pull Requests",
+      description: "Monitor your PR success rate and review engagement metrics"
+    },
+    {
+      icon: FaStar,
+      title: "Repository Impact",
+      description: "See how your contributions affect repository growth and popularity"
+    }
+  ];
 
-    const featureIcons = [FaChartLine, FaRobot, FaUserFriends];
+  const contributorStats = [
+    { number: '1000+', label: 'Active Contributors', icon: FaUsers },
+    { number: '4000+', label: 'Pull Requests Merged', icon: FaCode },
+    { number: '12K+', label: 'Stars Earned', icon: FaStar },
+    { number: '50+', label: 'Top Contributors', icon: FaTrophy }
+  ];
 
-    return (
-        <div>
-            {/* Navbar */}
-            <nav className="bg-[rgb(40,54,82)] p-4 fixed w-full z-50">
-                <div className="container mx-auto flex justify-between items-center">
-                    <div>
-                        <img src="https://hyperswitch.io/logos/hyperswitch.svg" alt="Hyperswitch Logo" />
-                    </div>
-                    <div className="space-x-6 mx-auto cursor-pointer">
-                        {['home', 'features', 'leaderboard', 'contact'].map((section) => (
-                            <Link key={section} to={section} smooth={true} duration={500} offset={-90} className="text-gray-300 text-xl hover:text-white">
-                                {section.charAt(0).toUpperCase() + section.slice(1)}
-                            </Link>
-                        ))}
-                    </div>
-                    <button 
-                        onClick={() => setIsModalOpen(true)} 
-                        className="bg-blue-700 text-white px-4 py-1.5 rounded-full font-semibold text-lg flex items-center hover:bg-blue-800 hover:scale-105 transform transition-transform duration-300" 
-                    >
-                        <LogIn className="mr-2 h-6 w-6" /> Login
-                    </button>
-                </div>
-            </nav>
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Animate feature cards
+      gsap.from('.feature-card', {
+        scrollTrigger: {
+          trigger: featuresRef.current,
+          start: 'top center',
+          end: 'center center',
+          scrub: 1,
+        },
+        y: 100,
+        opacity: 0,
+        duration: 1,
+        stagger: 0.2,
+      });
 
-            <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      // Animate contributor stats
+      gsap.from('.contributor-stat', {
+        scrollTrigger: {
+          trigger: contributorsRef.current,
+          start: 'top center',
+          end: 'center center',
+          scrub: 1,
+        },
+        scale: 0.8,
+        opacity: 0,
+        duration: 1,
+        stagger: 0.2,
+      });
+    });
 
-            {/* Main Content */}
-            <div className="bg-gray-100">
+    return () => ctx.revert();
+  }, []);
 
-                {/* Hero Section */}
-                <section id="home" className="relative flex flex-col items-center justify-center h-screen bg-[rgb(40,54,82)] text-white overflow-hidden">
-                    <motion.img 
-                        src={background} 
-                        alt="background" 
-                        className="absolute inset-0 ml-auto h-full object-cover bg-blend-overlay opacity-50"
-                        initial={{ scale: 1.2 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
-                    />
-                    <motion.div 
-                        className="relative z-10 flex flex-col items-center text-center px-4"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 1.2, ease: 'easeOut' }}
-                    >
-                        <motion.div
-                            animate={{
-                                rotateY: [0, 360],
-                            }}
-                            transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                repeatType: "loop",
-                                ease: "linear"
-                            }}
-                        >
-                            <FaGithub className="h-36 w-36 mb-6" />
-                        </motion.div>
-                        <motion.h1
-                            className="text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600"
-                            initial={{ y: -50, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 1 }}
-                        >
-                            Track the Future
-                        </motion.h1>
-                        <motion.p 
-                            className="mt-4 text-3xl text-gray-300"
-                            initial={{ y: 50, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 1 }}
-                        >
-                            Stay ahead with real-time rankings & insights
-                        </motion.p>
-                        <a href="https://github.com/juspay/hyperswitch" target="_blank" rel="noopener noreferrer">
-                            <motion.button
-                                className="mt-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-xl hover:shadow-lg"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                Get Started
-                            </motion.button>
-                        </a>
-                    </motion.div>
+  return (
+    <div className="bg-gray-100">
+      {/* Navbar */}
+      <nav className="bg-[rgb(40,54,82)] p-4 fixed w-full z-50">
+        <div className="container mx-auto flex justify-between items-center">
+          <div>
+            <img src="https://hyperswitch.io/logos/hyperswitch.svg" alt="Hyperswitch Logo" />
+          </div>
+          <div className="space-x-6 mx-auto cursor-pointer">
+                {['home', 'features', 'leaderboard', 'contact'].map((section) => (
+                    <Link key={section} to={section} smooth={true} duration={500} offset={-90} className="text-gray-300 text-xl hover:text-white">
+                        {section.charAt(0).toUpperCase() + section.slice(1)}
+                    </Link>
+                ))}
+            </div>
+          <motion.button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-700 text-white px-4 py-1.5 rounded-full font-semibold text-lg flex items-center"
+            whileHover={{ scale: 1.05, backgroundColor: '#1d4ed8' }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <LogIn className="mr-2 h-6 w-6" /> Login
+          </motion.button>
+        </div>
+      </nav>
 
-                    <motion.div 
-                        className="absolute bottom-10 w-60 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
-                        initial={{ opacity: 0, scaleX: 0 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 1.5, delay: 0.8, ease: 'easeOut' }}
-                    />
-                </section>
+      <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
-                {/* Features Section */}
-                <section id="features" className="py-32 bg-white">
-                    <div className="container mx-auto px-4">
-                        <motion.h2 
-                            className="text-5xl font-bold text-center mb-16 text-gray-800"
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 1 }}
-                        >
-                            Cutting-Edge Features
-                        </motion.h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-                            {[
-                                { 
-                                    title: 'Real-Time Insights', 
-                                    description: 'Get instant updates on community activity with our advanced real-time tracking system. Stay informed about every contribution as it happens.',
-                                    icon: FaChartLine
-                                },
-                                { 
-                                    title: 'AI-Powered Ranking', 
-                                    description: 'Our sophisticated AI algorithm assigns points based on contribution complexity, ensuring fair and accurate recognition of developer efforts.',
-                                    icon: FaRobot
-                                },
-                                { 
-                                    title: 'Seamless Integration', 
-                                    description: 'Effortlessly connect with popular platforms and enjoy a smooth, intuitive interface designed for developers of all levels.',
-                                    icon: FaUserFriends
-                                },
-                            ].map((feature, index) => (
-                                <motion.div
-                                    key={index}
-                                    className="bg-gradient-to-br from-[rgb(30,44,72)] to-[rgb(40,54,82)] p-8 rounded-xl shadow-xl hover:shadow-2xl transition duration-300 group"
-                                    initial={{ opacity: 0, scale: 0.8, y: 50 }}
-                                    animate={controls}
-                                    custom={index}
-                                    whileHover={{ scale: 1.05 }}
-                                >
-                                    <motion.div
-                                        className="text-6xl text-blue-400 mb-6 group-hover:text-purple-400 transition-colors duration-300"
-                                        whileHover={{ rotate: 360 }}
-                                        transition={{ duration: 0.5 }}
-                                    >
-                                        <feature.icon />
-                                    </motion.div>
-                                    <h3 className="text-3xl font-bold mb-4 text-white">{feature.title}</h3>
-                                    <p className="text-gray-300 text-lg leading-relaxed">{feature.description}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
+      {/* Hero Section */}
+      <section id="home" className="relative min-h-screen bg-[rgb(40,54,82)] text-white overflow-hidden">
+        <motion.div 
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.6 }}
+          transition={{ duration: 2 }}
+        >
+          <img src={background} alt="background" className="w-full h-full object-cover" />
+        </motion.div>
+
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between relative z-10 py-32">
+          <motion.div 
+            className="md:w-1/2 text-left"
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
+            <h1 className="text-7xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+              Celebrate Open Source Heroes
+            </h1>
+            <p className="text-2xl text-gray-300 mb-8">
+              Track, recognize, and reward the outstanding contributors shaping the future of Hyperswitch.
+            </p>
+            <motion.button
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-xl"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}  
+              onClick={() => document.getElementById('leaderboard').scrollIntoView({ behavior: 'smooth' })}            
+            >
+              View Leaderboard
+            </motion.button>
+          </motion.div>
+
+          <motion.div
+            animate={{
+                rotateY: [0, 360],
+            }}
+            transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "linear"
+            }}
+            >
+            <FaGithub className="h-60 w-60 mt-16 mr-10" />
+            </motion.div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" ref={featuresRef} className="pb-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-800 mb-4 md:mb-0 text-center">
+              Track Your Open Source Journey
+            </h2>
+            <img src={image} className="h-48 w-48 md:ml-20" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                className="feature-card p-8 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg"
+                whileHover={{ scale: 1.05 }}
+              >
+                <feature.icon className="w-12 h-12 text-blue-600 mb-6" />
+                <h3 className="text-2xl font-bold mb-4 text-gray-800">{feature.title}</h3>
+                <p className="text-gray-600 text-lg">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* Contributor Stats Section */}
+      <section ref={contributorsRef} className="py-20 bg-gradient-to-br from-blue-900 to-purple-900 text-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-16">
+            Our Growing Community
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {contributorStats.map((stat, index) => (
+              <motion.div
+                key={index}
+                className="contributor-stat text-center"
+                whileHover={{ scale: 1.1 }}
+              >
+                <stat.icon className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                <h3 className="text-4xl font-bold mb-2">{stat.number}</h3>
+                <p className="text-xl text-gray-300">{stat.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
                 {/*Leaderboard Section */}
-                <div id="features">
+                <div id="leaderboard" >
                     <Leaderboard owner="juspay" repo="hyperswitch" />
                 </div>
 
@@ -287,7 +328,6 @@ function App() {
                 </footer>
 
             </div>
-        </div>
     );
 }
 

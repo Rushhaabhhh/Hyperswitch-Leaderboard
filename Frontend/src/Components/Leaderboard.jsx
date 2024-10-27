@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ChevronDown, ArrowUpDown, Github, Trophy } from 'lucide-react';
+import { Search, ArrowUpDown, Github, Trophy, ChevronDown } from 'lucide-react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -85,11 +86,29 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 bg-gray-900 min-h-screen">
+    <motion.div 
+      className="container mx-auto px-4 py-8 bg-gray-900 min-h-screen"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="text-center mb-8">
-        
-        <h2 className="text-4xl font-bold text-white mb-2">Community Contributors</h2>
-        <p className="text-gray-400">Recognizing our valuable contributors</p>
+        <motion.h2 
+          className="text-4xl font-bold text-white mb-2"
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          Community Contributors
+        </motion.h2>
+        <motion.p 
+          className="text-gray-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          Recognizing our valuable contributors
+        </motion.p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -97,13 +116,13 @@ const Leaderboard = () => {
           <select
             value={timeFrame}
             onChange={(e) => setTimeFrame(e.target.value)}
-            className="w-full p-3 pl-4 pr-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 pl-4 pr-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
 
         <div className="relative flex-1">
@@ -141,7 +160,12 @@ const Leaderboard = () => {
             <tbody className="divide-y divide-gray-700">
               {filteredData.map((contributor, index) => (
                 <React.Fragment key={contributor.username}>
-                  <tr className="hover:bg-gray-700 transition-colors">
+                  <motion.tr 
+                    className="hover:bg-gray-700 transition-colors"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
                     <td className="px-6 py-4 text-gray-300">
                       {getRankBadge(index + 1)}
                     </td>
@@ -177,7 +201,7 @@ const Leaderboard = () => {
                         {expandedUser === contributor.username ? 'Hide' : 'Show'}
                       </button>
                     </td>
-                  </tr>
+                  </motion.tr>
                   {expandedUser === contributor.username && (
                     <tr>
                       <td colSpan="5" className="px-6 py-4 bg-gray-750">
@@ -230,11 +254,7 @@ const Leaderboard = () => {
           </table>
         </div>
       </div>
-
-      <div className="mt-6 text-center text-gray-400">
-        Total Contributors: {filteredData.length}
-      </div>
-    </div>
+    </motion.div>
   );
 };
 
