@@ -1,10 +1,10 @@
 const GitHubStrategy = require('passport-github2').Strategy;
+const { contributorsTable } = require('../config/airtableConfig');
 const dotenv = require('dotenv');
-const table = require('../config/airtableConfig');
 
 dotenv.config();
 
-module.exports = function (passport) {
+module.exports = function(passport) {
     passport.use(new GitHubStrategy({
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
@@ -12,50 +12,48 @@ module.exports = function (passport) {
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
-            const githubid = profile.id;
+            const githubId = profile.id;
             const username = profile.username || profile.displayName;
-            const email = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
+            const profileLink = profile.profileUrl;
 
-            // Check if user exists in Airtable
-            const records = await table.select({
-                filterByFormula: `{githubid} = '${githubid}'`
+            // Check if contributor exists in Airtable
+            const records = await contributorsTable.select({
+                filterByFormula: `{GituhbId} = '${githubId}'`
             }).firstPage();
 
             let user;
             if (records.length > 0) {
-                user = records[0]; // User exists
+                user = records[0]; // Contributor exists
             } else {
-                // Create new user
-                const createdRecords = await table.create([
-                    {
-                        fields: {
-                            githubid: githubid,
-                            username: username,
-                            email: email || 'N/A' // Ensure email is not null
-                        }
+                // Create new contributor
+                const createdRecords = await contributorsTable.create([{
+                    fields: {
+                        GituhbId: githubId,
+                        Username: username,
+                        TotalPoints: 0,
+                        ProfileLink: profileLink,
+                        Rank: 'Newbie' // Default rank
                     }
-                ]);
+                }]);
                 user = createdRecords[0];
             }
 
             return done(null, user);
-        } catch (err) {
-            return done(err, null);
+        } catch (error) {
+            return done(error, null);
         }
     }));
 
-    // Serialize user
     passport.serializeUser((user, done) => {
         done(null, user.id); // Airtable record ID
     });
 
-    // Deserialize user
     passport.deserializeUser(async (id, done) => {
         try {
-            const user = await table.find(id); // Fetch user from Airtable
+            const user = await contributorsTable.find(id); // Fetch user from Airtable
             done(null, user);
-        } catch (err) {
-            done(err, null);
+        } catch (error) {
+            done(error, null);
         }
     });
 };

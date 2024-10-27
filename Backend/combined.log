@@ -1,0 +1,7 @@
+{"error":{},"level":"error","message":"Error fetching repo data:","owner":"juspay","repo":"hyperswitch","timestamp":"2024-10-27T06:53:09.784Z"}
+{"error":{},"level":"error","message":"Error fetching repo data:","owner":"juspay","repo":"hyperswitch","timestamp":"2024-10-27T06:53:09.803Z"}
+{"error":{},"level":"error","message":"Error fetching repo data:","owner":"juspay","repo":"hyperswitch","timestamp":"2024-10-27T06:56:14.591Z"}
+{"error":{},"level":"error","message":"Error fetching repo data:","owner":"juspay","repo":"hyperswitch","timestamp":"2024-10-27T06:56:14.625Z"}
+{"error":{"error":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"githubid\"","statusCode":422},"level":"error","message":"GitHub authentication error:","timestamp":"2024-10-27T06:58:44.368Z"}
+{"error":{"error":"INVALID_FILTER_BY_FORMULA","message":"The formula for filtering records is invalid: Unknown field names: gituhbid","statusCode":422},"level":"error","message":"GitHub authentication error:","timestamp":"2024-10-27T07:08:14.306Z"}
+{"error":{"error":"INVALID_FILTER_BY_FORMULA","message":"The formula for filtering records is invalid: Unknown field names: gituhbid","statusCode":422},"level":"error","message":"GitHub authentication error:","timestamp":"2024-10-27T07:08:15.303Z"}

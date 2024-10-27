@@ -2,6 +2,10 @@ const Airtable = require('airtable');
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
-const table = base('tblPd0nIOKVjM1fJh'); 
+const contributorsTable = base(process.env.AIRTABLE_CONTRIBUTORS_TABLE);
+const leaderboardTable = base(process.env.AIRTABLE_LEADERBOARD_TABLE);
 
-module.exports = table;
+module.exports = {
+    contributorsTable,
+    leaderboardTable
+};
