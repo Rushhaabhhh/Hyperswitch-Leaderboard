@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate } from 'react-router-dom';
 
 const LoginModal = ({ isOpen, onClose }) => {
     const [errorMessage, setErrorMessage] = useState('');
+    const navigate = useNavigate();
 
     const handleGitHubLogin = () => {
-        window.location.href = 'http://localhost:5000/auth/github'; 
+        // window.location.href = 'http://localhost:5000/auth/github'; 
+        navigate('/HomePage')
     };
 
     if (!isOpen) return null;

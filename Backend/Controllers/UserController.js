@@ -37,6 +37,7 @@ exports.githubLogin = [
 // Handles the callback from GitHub after authentication
 exports.githubCallback = [
     authLimiter,
+    
     (req, res, next) => {
         passport.authenticate('github', async (err, profile) => {
             if (err) {
