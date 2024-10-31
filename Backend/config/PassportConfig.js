@@ -16,9 +16,10 @@ module.exports = function(passport) {
             const username = profile.username || profile.displayName;
             const profileLink = profile.profileUrl;
 
-            // Check if contributor exists in Airtable
+            // Correct field name casing for Airtable
+            // Use EXACTLY the column names from your Airtable base
             const records = await contributorsTable.select({
-                filterByFormula: `{GituhbId} = '${githubId}'`
+                filterByFormula: `{GithubId} = '${githubId}'`
             }).firstPage();
 
             let user;
@@ -28,7 +29,7 @@ module.exports = function(passport) {
                 // Create new contributor
                 const createdRecords = await contributorsTable.create([{
                     fields: {
-                        GituhbId: githubId,
+                        GithubId: githubId,
                         Username: username,
                         TotalPoints: 0,
                         ProfileLink: profileLink,

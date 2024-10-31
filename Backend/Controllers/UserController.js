@@ -51,21 +51,20 @@ exports.githubCallback = [
 
             try {
                 const userData = {
-                    githubId: profile.id,
-                    username: profile.username,
-                    email: profile.emails?.[0]?.value || 'N/A',
-                    avatarUrl: profile.photos?.[0]?.value,
-                    lastLogin: new Date().toISOString()
+                    GithubId: profile.id,
+                    Username: profile.username,
+                    ProfileLink: profile.profileUrl,
+                    LastLogin: new Date().toISOString()
                 };
 
                 // Check cache first
-                const cacheKey = `user_${userData.githubId}`;
+                const cacheKey = `user_${userData.GithubId}`;
                 let user = cache.get(cacheKey);
 
                 if (!user) {
                     // Check if user exists in Airtable
                     const records = await contributorsTable.select({
-                        filterByFormula: `{githubId} = '${userData.githubId}'`
+                        filterByFormula: `{GithubId} = '${userData.GithubId}'`
                     }).firstPage();
 
                     if (records.length > 0) {
@@ -74,26 +73,26 @@ exports.githubCallback = [
                             id: records[0].id,
                             fields: {
                                 ...userData,
-                                loginCount: (records[0].fields.loginCount || 0) + 1,
-                                updatedAt: new Date().toISOString()
+                                LoginCount: (records[0].fields.LoginCount || 0) + 1,
+                                UpdatedAt: new Date().toISOString()
                             }
                         }]);
                         user = updatedRecords[0];
-                        logger.info('User updated:', { username: userData.username });
+                        logger.info('User updated:', { username: userData.Username });
                     } else {
                         // Create new user
                         const createdRecords = await contributorsTable.create([{
                             fields: {
                                 ...userData,
-                                totalPoints: 0,
-                                contributionsCount: 0,
-                                loginCount: 1,
-                                createdAt: new Date().toISOString(),
-                                updatedAt: new Date().toISOString()
+                                TotalPoints: 0,
+                                LoginCount: 1,
+                                Rank: 'Newbie',
+                                CreatedAt: new Date().toISOString(),
+                                UpdatedAt: new Date().toISOString()
                             }
                         }]);
                         user = createdRecords[0];
-                        logger.info('New user created:', { username: userData.username });
+                        logger.info('New user created:', { username: userData.Username });
                     }
 
                     // Cache user data
@@ -103,7 +102,7 @@ exports.githubCallback = [
                 // Log the user in and redirect
                 req.logIn(user, (err) => {
                     if (err) {
-                        logger.error('Login error:', { error: err, username: userData.username });
+                        logger.error('Login error:', { error: err, username: userData.Username });
                         return next(err);
                     }
                     return res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173/HomePage');
@@ -137,8 +136,7 @@ exports.getUserProfile = async (req, res) => {
         res.json({
             id: userProfile.id,
             ...userProfile.fields,
-            githubId: undefined, // Exclude sensitive data
-            email: undefined
+            GithubId: undefined, // Exclude sensitive data if needed
         });
     } catch (error) {
         logger.error('Error fetching user profile:', { error, userId: req.user?.id });
@@ -178,7 +176,7 @@ exports.updateProfile = async (req, res) => {
             return res.status(401).json({ message: 'Not authenticated' });
         }
 
-        const allowedUpdates = ['displayName', 'bio', 'location', 'website'];
+        const allowedUpdates = ['Username', 'Rank', 'TotalPoints', 'ProfileLink'];
         const updates = Object.keys(req.body)
             .filter(key => allowedUpdates.includes(key))
             .reduce((obj, key) => {
@@ -190,7 +188,7 @@ exports.updateProfile = async (req, res) => {
             id: req.user.id,
             fields: {
                 ...updates,
-                updatedAt: new Date().toISOString()
+                UpdatedAt: new Date().toISOString()
             }
         }]);
 
