@@ -54,7 +54,8 @@ exports.githubCallback = [
                     GithubId: profile.id,
                     Username: profile.username,
                     ProfileLink: profile.profileUrl,
-                    LastLogin: new Date().toISOString()
+                    TotalPoints: 0,
+                    Rank: 'Newbie',
                 };
 
                 // Check cache first
@@ -85,10 +86,8 @@ exports.githubCallback = [
                             fields: {
                                 ...userData,
                                 TotalPoints: 0,
-                                LoginCount: 1,
                                 Rank: 'Newbie',
-                                CreatedAt: new Date().toISOString(),
-                                UpdatedAt: new Date().toISOString()
+                                
                             }
                         }]);
                         user = createdRecords[0];
@@ -108,10 +107,11 @@ exports.githubCallback = [
                     return res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173/HomePage');
                 });
             } catch (error) {
+                const isDevelopment = process.env.NODE_ENV === 'development';
                 logger.error('Airtable error:', { error });
                 return res.status(500).json({ 
-                    message: 'Error accessing database',
-                    error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+                    message: error.message,
+                    // error: isDevelopment ? error.message : 'Internal server error'
                 });
             }
         })(req, res, next);

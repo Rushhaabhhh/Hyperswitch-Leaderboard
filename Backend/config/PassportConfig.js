@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 module.exports = function(passport) {
+
     passport.use(new GitHubStrategy({
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
@@ -16,8 +17,6 @@ module.exports = function(passport) {
             const username = profile.username || profile.displayName;
             const profileLink = profile.profileUrl;
 
-            // Correct field name casing for Airtable
-            // Use EXACTLY the column names from your Airtable base
             const records = await contributorsTable.select({
                 filterByFormula: `{GithubId} = '${githubId}'`
             }).firstPage();
