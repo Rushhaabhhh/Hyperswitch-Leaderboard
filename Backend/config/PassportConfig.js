@@ -32,7 +32,8 @@ module.exports = function(passport) {
                         Username: username,
                         TotalPoints: 0,
                         ProfileLink: profileLink,
-                        Rank: 'Newbie' // Default rank
+                        Rank: 'Newbie', 
+                        Role: 'user',
                     }
                 }]);
                 user = createdRecords[0];

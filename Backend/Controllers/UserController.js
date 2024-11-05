@@ -24,6 +24,11 @@ const authLimiter = rateLimit({
     message: 'Too many authentication attempts, please try again later'
 });
 
+// Helper function to check if user is super-admin
+function isSuperAdmin(user) {
+    return user && user.fields && user.fields.Role === 'super-admin';
+}
+
 // Redirects the user to GitHub for authentication
 exports.githubLogin = [
     authLimiter,
@@ -37,7 +42,6 @@ exports.githubLogin = [
 // Handles the callback from GitHub after authentication
 exports.githubCallback = [
     authLimiter,
-    
     (req, res, next) => {
         passport.authenticate('github', async (err, profile) => {
             if (err) {
@@ -56,6 +60,7 @@ exports.githubCallback = [
                     ProfileLink: profile.profileUrl,
                     TotalPoints: 0,
                     Rank: 'Newbie',
+                    Role: 'user',
                 };
 
                 // Check cache first
@@ -87,7 +92,7 @@ exports.githubCallback = [
                                 ...userData,
                                 TotalPoints: 0,
                                 Rank: 'Newbie',
-                                
+                                Role: 'user',
                             }
                         }]);
                         user = createdRecords[0];
@@ -111,7 +116,6 @@ exports.githubCallback = [
                 logger.error('Airtable error:', { error });
                 return res.status(500).json({ 
                     message: error.message,
-                    // error: isDevelopment ? error.message : 'Internal server error'
                 });
             }
         })(req, res, next);
@@ -136,7 +140,8 @@ exports.getUserProfile = async (req, res) => {
         res.json({
             id: userProfile.id,
             ...userProfile.fields,
-            GithubId: undefined, // Exclude sensitive data if needed
+            GithubId: undefined,
+            Role: userProfile.fields.Role || 'user'
         });
     } catch (error) {
         logger.error('Error fetching user profile:', { error, userId: req.user?.id });
@@ -188,7 +193,8 @@ exports.updateProfile = async (req, res) => {
             id: req.user.id,
             fields: {
                 ...updates,
-                UpdatedAt: new Date().toISOString()
+                UpdatedAt: new Date().toISOString(),
+                Role: req.user.fields.Role || 'user'
             }
         }]);
 
@@ -201,5 +207,40 @@ exports.updateProfile = async (req, res) => {
     } catch (error) {
         logger.error('Error updating profile:', { error, userId: req.user?.id });
         res.status(500).json({ message: 'Error updating profile' });
+    }
+};
+
+// Assign admin role - Only accessible by super-admin
+exports.assignAdminRole = async (req, res) => {
+    try {
+        if (!req.user || !isSuperAdmin(req.user)) {
+            return res.status(403).json({ message: 'Forbidden: Only super-admin can assign roles.' });
+        }
+
+        const { userId, newRole } = req.body;
+
+        if (newRole !== 'admin') {
+            return res.status(400).json({ message: 'Invalid role: Only "admin" role can be assigned.' });
+        }
+
+        // Fetch the user from Airtable
+        const userToUpdate = await contributorsTable.find(userId);
+        if (!userToUpdate) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const updatedUser = await contributorsTable.update([{
+            id: userToUpdate.id,
+            fields: { Role: newRole }
+        }]);
+
+        cache.del(`user_${userId}`);
+        cache.del(`profile_${userId}`);
+
+        logger.info('Role updated to admin:', { userId });
+        res.json({ message: 'Role updated successfully', user: updatedUser[0] });
+    } catch (error) {
+        logger.error('Error assigning admin role:', { error });
+        res.status(500).json({ message: 'Error assigning admin role' });
     }
 };
