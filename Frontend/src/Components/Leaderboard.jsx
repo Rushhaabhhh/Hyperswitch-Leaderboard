@@ -121,6 +121,7 @@ const Leaderboard = () => {
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
+            <option value="allTime">All Time</option>
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
@@ -228,7 +229,7 @@ const Leaderboard = () => {
                                   ))}
                                 </div>
                               </div>
-                              <div className="text-sm">
+                              {/* <div className="text-sm">
                                 <div className="font-medium text-green-400">
                                   +{detail.pointsEarned} points
                                 </div>
@@ -241,7 +242,7 @@ const Leaderboard = () => {
                                     )
                                   )}
                                 </div>
-                              </div>
+                              </div> */}
                             </div>
                           ))}
                         </div>

@@ -38,6 +38,9 @@ class LeaderboardController {
         case 'monthly':
           since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
           break;
+        case 'allTime':
+          since = new Date(0).toISOString(); // Unix epoch (1970-01-01T00:00:00.000Z)
+          break;
         default:
           since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       }

@@ -10,6 +10,8 @@ import Leaderboard from '../Components/Leaderboard.jsx';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+import Footer from '../Components/Footer.jsx';
+
 gsap.registerPlugin(ScrollTrigger);
 
 
@@ -230,7 +232,7 @@ function App() {
                     </div>
                 </section>
 
-                <footer className="bg-black text-white py-6">
+                {/* <footer className="bg-black text-white py-6">
                     <div className="container mx-auto px-4 flex flex-col">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                             <div>
@@ -325,7 +327,9 @@ function App() {
                             </p>
                         </div>
                     </div>
-                </footer>
+                </footer> */}
+
+                <Footer />
 
             </div>
     );

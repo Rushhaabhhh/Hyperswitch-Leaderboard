@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaPencilAlt, FaGithub } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { ChevronDown, ArrowUpDown, Tag } from 'lucide-react';
+import Footer from '../Components/Footer.jsx';
 
 // Dummy user data
 const dummyUser = {
@@ -286,12 +287,7 @@ const HomePage = () => {
                 </div>
             </div>
 
-            {/* Footer Section */}
-            <footer className="bg-gray-900 py-6 mt-12">
-                <div className="container mx-auto text-center text-gray-400">
-                    © {new Date().getFullYear()} Hyperswitch | Open Source Contributions
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 };
