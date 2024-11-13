@@ -1,18 +1,22 @@
 import { React, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Users, Settings, Star, Menu, X } from 'lucide-react';
-
+import { Home, Users, Settings, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
-  
+    const location = useLocation();
+
     const menuItems = [
       { icon: Home, label: 'Dashboard', path: '/' },
-      { icon: Users, label: 'Contributors', path: '/contributors' },
+      {
+        icon: Users,
+        label: location.pathname === '/admin' ? 'Super Admin' : 'Admin',
+        path: location.pathname === '/admin' ? '/super-admin' : '/admin',
+      },
       { icon: Settings, label: 'Settings', path: '/settings' },
     ];
-  
+
     return (
       <motion.nav 
         initial={{ y: -100 }}
@@ -22,7 +26,7 @@ const Navbar = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center space-x-2">
-            <img src="https://hyperswitch.io/logos/hyperswitch.svg" alt="Hyperswitch Logo" />
+              <img src="https://hyperswitch.io/logos/hyperswitch.svg" alt="Hyperswitch Logo" />
             </Link>
   
             {/* Desktop Menu */}
@@ -77,5 +81,5 @@ const Navbar = () => {
       </motion.nav>
     );
   };
-  
+
 export default Navbar;

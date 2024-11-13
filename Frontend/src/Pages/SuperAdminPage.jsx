@@ -1,83 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { UserX, Award, Search, UserPlus, ArrowUpDown } from 'lucide-react';
+import { UserX, Award, Search, UserPlus, ArrowUpDown, UserMinus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Footer from '../Components/Footer';
 import PointsUpdateModal from '../Components/PointsUpdateModal';
 import Navbar from '../Components/AdminNavbar';
-
-
-// New Admin Management Modal
-const AdminManagementModal = ({ isOpen, onClose, onAddAdmin }) => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('admin');
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
-        <h2 className="text-xl font-bold text-white mb-4">Add New Admin</h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-gray-300 mb-2">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-gray-700 text-white rounded p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-300 mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-gray-700 text-white rounded p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-300 mb-2">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-gray-700 text-white rounded p-2 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="admin">Admin</option>
-              <option value="moderator">Moderator</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-4 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-400 hover:text-gray-300"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              onAddAdmin({ username, email, role });
-              setUsername('');
-              setEmail('');
-              setRole('admin');
-              onClose();
-            }}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Add Admin
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import AdminManagementModal from '../Components/AdminManagementModal';
 
 const SuperAdminPage = () => {
     const [users, setUsers] = useState([]);
@@ -90,6 +18,7 @@ const SuperAdminPage = () => {
     const [error, setError] = useState(null);
     const [sortOrder, setSortOrder] = useState('points_desc');
     const [activeTab, setActiveTab] = useState('contributors');
+
 
     const owner = 'juspay';
     const repo = 'hyperswitch';
@@ -121,7 +50,7 @@ const SuperAdminPage = () => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:5000/admins`
+                `http://localhost:5000/NA`
             );
             setAdmins(response.data);
         } catch (err) {
@@ -156,9 +85,10 @@ const SuperAdminPage = () => {
     const handleAddAdmin = async (adminData) => {
         try {
             await axios.post(
-                'http://localhost:5000/admins',
+                'http://localhost:5000/auth/assign-admin',
                 adminData
             );
+            console.log(adminData);
             fetchAdminsData();
         } catch (err) {
             setError('Failed to add admin');
@@ -351,18 +281,7 @@ const SuperAdminPage = () => {
                                             <td className="px-6 py-4">
                                                 <div className="text-white font-medium">{admin.username}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-gray-400">
-                                                {admin.email}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs ${
-                                                    admin.role === 'admin' 
-                                                        ? 'bg-blue-500/20 text-blue-400'
-                                                        : 'bg-purple-500/20 text-purple-400'
-                                                }`}>
-                                                    {admin.role}
-                                                </span>
-                                            </td>
+                                            
                                             <td className="px-6 py-4">
                                                 <button
                                                     onClick={() => handleRemoveAdmin(admin.username)}

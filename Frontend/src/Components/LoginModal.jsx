@@ -9,8 +9,8 @@ const LoginModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
 
     const handleGitHubLogin = () => {
-        // window.location.href = 'http://localhost:5000/auth/github'; 
-        navigate('/HomePage')
+        window.location.href = 'http://localhost:5000/auth/github'; 
+        // navigate('/HomePage')
     };
 
     if (!isOpen) return null;
