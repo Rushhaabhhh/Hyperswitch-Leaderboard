@@ -14,7 +14,6 @@ function isAdmin(user) {
     return user && user.fields && user.fields.Role === 'admin';
 }
 
-// Redirects the user to GitHub for authentication
 exports.githubLogin = (req, res, next) => {
     passport.authenticate('github', { 
         scope: ['user:email', 'read:user']
@@ -31,7 +30,7 @@ exports.githubCallback = async (req, res, next) => {
 
         if (!profile) {
             console.warn('No profile received from GitHub');
-            return res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173/');
+            return res.redirect(`${process.env.FRONTEND_URL}/`);
         }
 
         try {
@@ -71,21 +70,14 @@ exports.githubCallback = async (req, res, next) => {
                 user = createdRecords[0];
                 console.info('New user created:', userData.Username);
             }
-            console.log("Role : " + user.fields.Role);
+
             // Check the user's role and redirect accordingly
             if (user.fields.Role === 'admin') {
-                return res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173/admin');
+                return res.redirect(`${process.env.FRONTEND_URL}/admin`);
             } else if (user.fields.Role === 'super-admin') {
-                return res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173/super-admin');
+                return res.redirect(`${process.env.FRONTEND_URL}/super-admin`);
             } else {
-                // Only send one request with user data
-                req.logIn(user, (err) => {
-                    if (err) {
-                        console.error('Login error:', err);
-                        return next(err);
-                    }
-                    return res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173/user');
-                });
+                return res.redirect(`${process.env.FRONTEND_URL}/user`);
             }
         } catch (error) {
             console.error('Airtable error:', error);

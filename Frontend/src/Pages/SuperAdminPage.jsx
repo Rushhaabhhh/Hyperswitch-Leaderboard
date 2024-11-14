@@ -108,12 +108,12 @@ const SuperAdminPage = () => {
     };
 
     const filteredUsers = users.filter(user => 
-        user.username.toLowerCase().includes(searchTerm.toLowerCase())
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    // const filteredAdmins = admins.filter(admin =>
-    //     admin.username.toLowerCase().includes(searchTerm.toLowerCase())
-    // );
+    
+    const filteredAdmins = admins.filter(admin =>
+        admin.fields.username?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const toggleSort = () => {
         setSortOrder(prev => prev === 'points_desc' ? 'points_asc' : 'points_desc');
@@ -121,71 +121,45 @@ const SuperAdminPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-900">
-            <Navbar />
-            <main className="container mx-auto px-4 py-24">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
-                >
-                    <h1 className="text-3xl font-bold text-white">Super Admin Dashboard</h1>
-                    
-                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                        <div className="flex gap-4 mb-4 md:mb-0">
-                            <button
-                                onClick={() => setActiveTab('contributors')}
-                                className={`px-4 py-2 rounded-lg transition-colors ${
-                                    activeTab === 'contributors'
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-gray-800 text-gray-300'
-                                }`}
-                            >
-                                Contributors
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('admins')}
-                                className={`px-4 py-2 rounded-lg transition-colors ${
-                                    activeTab === 'admins'
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-gray-800 text-gray-300'
-                                }`}
-                            >
-                                Admins
-                            </button>
-                        </div>
-
-                        <div className="relative flex-1 md:flex-none">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input
-                                type="text"
-                                placeholder={`Search ${activeTab}...`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full md:w-64 pl-10 pr-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {activeTab === 'admins' && (
-                            <button
-                                onClick={() => setShowAdminModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                            >
-                                <UserPlus className="w-5 h-5" />
-                                Add Admin
-                            </button>
-                        )}
-
-                        {activeTab === 'contributors' && (
-                            <button
-                                onClick={toggleSort}
-                                className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 transition-colors"
-                            >
-                                <ArrowUpDown className="w-4 h-4" />
-                                {sortOrder === 'points_desc' ? 'Highest Points' : 'Lowest Points'}
-                            </button>
-                        )}
+        <Navbar />
+        <main className="container mx-auto px-4 py-24">
+            {/* Tab navigation and search */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+            >
+                <h1 className="text-3xl font-bold text-white">Super Admin Dashboard</h1>
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <button
+                        onClick={() => setActiveTab('contributors')}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            activeTab === 'contributors' ? 'bg-blue-500 text-white' : 'bg-gray-800 text-gray-300'
+                        }`}
+                    >
+                        Contributors
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('admins')}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            activeTab === 'admins' ? 'bg-blue-500 text-white' : 'bg-gray-800 text-gray-300'
+                        }`}
+                    >
+                        Admins
+                    </button>
+                    {/* Search and add buttons */}
+                    <div className="relative flex-1 md:flex-none">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                            type="text"
+                            placeholder={`Search ${activeTab}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full md:w-64 pl-10 pr-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-blue-500"
+                        />
                     </div>
-                </motion.div>
+                </div>
+            </motion.div>
 
                 {loading ? (
                     <div className="flex justify-center items-center h-64">
@@ -260,40 +234,41 @@ const SuperAdminPage = () => {
                                 </tbody>
                             </table>
                         ) : (
+                            <div><p>Admins Count: {filteredAdmins.length}</p>
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-gray-900">
-                                        <th className="px-6 py-3 text-left text-white">Username</th>
-                                        <th className="px-6 py-3 text-left text-white">Email</th>
-                                        <th className="px-6 py-3 text-left text-white">Role</th>
+                                        <th className="px-6 py-3 text-left text-white">Admin</th>
                                         <th className="px-6 py-3 text-left text-white">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {/* {filteredAdmins.map((admin, index) => (
-                                        <motion.tr
-                                            key={admin.username}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.05 }}
-                                            className="border-t border-gray-700 hover:bg-gray-750"
-                                        >
-                                            <td className="px-6 py-4">
-                                                <div className="text-white font-medium">{admin.username}</div>
-                                            </td>
-                                            
-                                            <td className="px-6 py-4">
-                                                <button
-                                                    onClick={() => handleRemoveAdmin(admin.username)}
-                                                    className="text-red-400 hover:text-red-300 transition-colors"
-                                                >
-                                                    <UserX className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </motion.tr>
-                                    ))} */}
-                                </tbody>
+    {filteredAdmins.map((admin, index) => (
+        <motion.tr
+            key={admin.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="border-t border-gray-700 hover:bg-gray-750"
+        >
+            <td className="px-6 py-4">
+                <div className="text-white font-medium">{admin.fields.username}</div>
+            </td>
+            <td className="px-6 py-4">
+                <button
+                    onClick={() => handleRemoveAdmin(admin.fields.username)}
+                    className="text-red-500 hover:text-red-700 transition-colors"
+                >
+                    <UserMinus className="w-5 h-5" />
+                    Remove
+                </button>
+            </td>
+        </motion.tr>
+    ))}
+</tbody>
+
                             </table>
+                            </div>
                         )}
                     </motion.div>
                 )}

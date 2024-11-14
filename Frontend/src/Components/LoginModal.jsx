@@ -10,7 +10,6 @@ const LoginModal = ({ isOpen, onClose }) => {
 
     const handleGitHubLogin = () => {
         window.location.href = 'http://localhost:5000/auth/github'; 
-        // navigate('/HomePage')
     };
 
     if (!isOpen) return null;
