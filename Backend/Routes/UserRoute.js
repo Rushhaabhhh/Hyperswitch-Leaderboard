@@ -12,6 +12,7 @@ router.get('/profile', UserController.getUserProfile);
 router.put('/profile', UserController.updateProfile);
 
 // Admin management routes
+router.get('/get-admin', UserController.getAdmins);
 router.post('/assign-admin', UserController.assignAdminRole);
 router.post('/remove-admin', UserController.removeAdminRole);
 

@@ -98,6 +98,13 @@ const AdminPage = () => {
                             <ArrowUpDown className="w-4 h-4" />
                             {sortOrder === 'points_desc' ? 'Highest Points' : 'Lowest Points'}
                         </button>
+                        <button
+                            onClick={() => setShowPointsModal(true)}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+                        >
+                            <Award className="w-4 h-4" />
+                            Update Points
+                        </button>
                     </div>
                 </motion.div>
     
@@ -143,23 +150,8 @@ const AdminPage = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-green-400 font-semibold">{user.points}</span>
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedUser(user);
-                                                        setShowPointsModal(true);
-                                                    }}
-                                                    className="text-blue-400 hover:text-blue-300 transition-colors"
-                                                >
-                                                    <Award className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-400">
-                                            {user.contributions}
-                                        </td>
+                                        <td className="px-6 py-4 text-green-400 font-semibold">{user.points}</td>
+                                        <td className="px-6 py-4 text-gray-400">{user.contributions}</td>
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={() => handleRemoveUser(user.username)}
@@ -179,7 +171,7 @@ const AdminPage = () => {
             <PointsUpdateModal
                 isOpen={showPointsModal}
                 onClose={() => setShowPointsModal(false)}
-                user={selectedUser}
+                users={users} // Pass users list to allow selection within modal
                 onUpdate={handleUpdatePoints}
             />
             <Footer />

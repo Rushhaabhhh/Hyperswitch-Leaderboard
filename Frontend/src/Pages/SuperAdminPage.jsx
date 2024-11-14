@@ -50,7 +50,7 @@ const SuperAdminPage = () => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:5000/NA`
+                `http://localhost:5000/auth/get-admin`
             );
             setAdmins(response.data);
         } catch (err) {
@@ -111,9 +111,9 @@ const SuperAdminPage = () => {
         user.username.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredAdmins = admins.filter(admin =>
-        admin.username.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // const filteredAdmins = admins.filter(admin =>
+    //     admin.username.toLowerCase().includes(searchTerm.toLowerCase())
+    // );
 
     const toggleSort = () => {
         setSortOrder(prev => prev === 'points_desc' ? 'points_asc' : 'points_desc');
@@ -270,7 +270,7 @@ const SuperAdminPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredAdmins.map((admin, index) => (
+                                    {/* {filteredAdmins.map((admin, index) => (
                                         <motion.tr
                                             key={admin.username}
                                             initial={{ opacity: 0, y: 20 }}
@@ -291,7 +291,7 @@ const SuperAdminPage = () => {
                                                 </button>
                                             </td>
                                         </motion.tr>
-                                    ))}
+                                    ))} */}
                                 </tbody>
                             </table>
                         )}

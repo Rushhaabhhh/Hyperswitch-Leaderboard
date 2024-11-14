@@ -167,6 +167,18 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+exports.getAdmins = async (req, res) => {  
+    try {
+        const records = await contributorsTable.select({
+            filterByFormula: `{Role} = 'admin'`
+        }).all();
+        res.json(records);
+    } catch (error) {
+        console.error('Error fetching admins:', error);
+        res.status(500).json({ message: 'Error fetching admins' });
+    }
+};
+
 // Assign admin role - Only accessible by super-admin
 exports.assignAdminRole = async (req, res) => {
     const { username, email} = req.body;
