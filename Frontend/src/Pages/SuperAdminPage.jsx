@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserX, Award, Search, UserPlus, ArrowUpDown, UserMinus } from 'lucide-react';
+import { UserX, Award, Search, UserPlus, UserMinus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Footer from '../Components/Footer';
@@ -19,9 +19,28 @@ const SuperAdminPage = () => {
     const [sortOrder, setSortOrder] = useState('points_desc');
     const [activeTab, setActiveTab] = useState('contributors');
 
-
     const owner = 'juspay';
     const repo = 'hyperswitch';
+
+    // Error auto-dismiss effect
+    useEffect(() => {
+        let timeoutId;
+        if (error) {
+            timeoutId = setTimeout(() => {
+                setError(null);
+                if (activeTab === 'contributors') {
+                    fetchLeaderboardData();
+                } else {
+                    fetchAdminsData();
+                }
+            }, 1000); 
+        }
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
+    }, [error, activeTab]);
 
     useEffect(() => {
         if (activeTab === 'contributors') {
@@ -52,9 +71,12 @@ const SuperAdminPage = () => {
             const response = await axios.get(
                 `http://localhost:5000/auth/get-admin`
             );
-            setAdmins(response.data);
+            setAdmins(response.data || []);
+            setError(null); 
         } catch (err) {
+            console.error('Error fetching admins:', err);
             setError('Failed to fetch admins');
+            setAdmins([]); 
         } finally {
             setLoading(false);
         }
@@ -71,14 +93,25 @@ const SuperAdminPage = () => {
         }
     };
 
-    const handleRemoveAdmin = async (username) => {
+    const handleRemoveAdmin = async (admin) => {
         try {
+            if (!window.confirm(`Are you sure you want to remove ${admin.fields.Username} as admin? This action cannot be undone.`)) {
+                return;
+            }
+
             await axios.delete(
-                `http://localhost:5000/admins/${username}`
+                `http://localhost:5000/auth/remove-admin/${admin.id}`
             );
-            fetchAdminsData();
+
+            // Remove the admin from local state immediately for better UX
+            setAdmins(prevAdmins => prevAdmins.filter(a => a.id !== admin.id));
+
+            alert(`${admin.fields.Username} has been removed from admins successfully`);
         } catch (err) {
-            setError('Failed to remove admin');
+            console.error('Error removing admin:', err);
+            setError(`Failed to remove admin: ${err.response?.data?.message || err.message}`);
+
+            alert('Failed to remove admin. Please try again.');
         }
     };
 
@@ -112,7 +145,7 @@ const SuperAdminPage = () => {
     );
     
     const filteredAdmins = admins.filter(admin =>
-        admin.fields.username?.toLowerCase().includes(searchTerm.toLowerCase())
+        admin.fields?.Username?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const toggleSort = () => {
@@ -234,46 +267,69 @@ const SuperAdminPage = () => {
                                 </tbody>
                             </table>
                         ) : (
-                            <div><p>Admins Count: {filteredAdmins.length}</p>
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-gray-900">
-                                        <th className="px-6 py-3 text-left text-white">Admin</th>
-                                        <th className="px-6 py-3 text-left text-white">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-    {filteredAdmins.map((admin, index) => (
-        <motion.tr
-            key={admin.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="border-t border-gray-700 hover:bg-gray-750"
-        >
-            <td className="px-6 py-4">
-                <div className="text-white font-medium">{admin.fields.username}</div>
-            </td>
-            <td className="px-6 py-4">
-                <button
-                    onClick={() => handleRemoveAdmin(admin.fields.username)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                >
-                    <UserMinus className="w-5 h-5" />
-                    Remove
-                </button>
-            </td>
-        </motion.tr>
-    ))}
-</tbody>
-
-                            </table>
+                            <div className="p-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <p className="text-white">Admins Count : {filteredAdmins.length}</p>
+                                    <button
+                                        onClick={() => setShowAdminModal(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                    >
+                                        <UserPlus className="w-5 h-5" />
+                                        Add Admin
+                                    </button>
+                                </div>
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gray-900">
+                                            <th className="px-6 py-3 text-left text-white">Admin</th>
+                                            <th className="px-6 py-3 text-left text-white">Profile</th>
+                                            <th className="px-6 py-3 text-left text-white">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredAdmins.map((admin, index) => (
+                                            <motion.tr
+                                                key={admin.id}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: index * 0.05 }}
+                                                className="border-t border-gray-700 hover:bg-gray-750"
+                                            >
+                                                <td className="px-6 py-4">
+                                                    <div className="text-white font-medium">
+                                                        {admin.fields.Username}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <a 
+                                                        href={admin.fields.ProfileLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-400 hover:text-blue-300"
+                                                    >
+                                                        GitHub Profile
+                                                    </a>
+                                                </td>
+                                                
+                                                <td className="px-6 py-4">
+                                                    <button
+                                                        onClick={() => handleRemoveAdmin(admin)}
+                                                        className="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors"
+                                                    >
+                                                        <UserMinus className="w-5 h-5" />
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </motion.div>
                 )}
-                </main>
-    
+            </main>
+
             <PointsUpdateModal
                 isOpen={showPointsModal}
                 onClose={() => setShowPointsModal(false)}
@@ -286,8 +342,8 @@ const SuperAdminPage = () => {
                 onClose={() => setShowAdminModal(false)}
                 onAddAdmin={handleAddAdmin}
             />
-        <Footer />
-    </div>
+            <Footer />
+        </div>
     );
 };
 
