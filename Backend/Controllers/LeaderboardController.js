@@ -24,25 +24,38 @@ class LeaderboardController {
 
   static async fetchRepoData(req, res) {
     const { owner, repo } = req.params;
-    const { timeFrame = 'weekly', sort = 'points_desc', type = 'all' } = req.query;
+    const { 
+      sort = 'points_desc', 
+      type = 'all',
+      from,
+      to
+    } = req.query;
 
     try {
-      let since;
-      switch (timeFrame) {
-        case 'daily':
-          since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-          break;
-        case 'weekly':
-          since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-          break;
-        case 'monthly':
-          since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-          break;
-        case 'allTime':
-          since = new Date(0).toISOString(); // Unix epoch (1970-01-01T00:00:00.000Z)
-          break;
-        default:
-          since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      // Parse and validate date parameters
+      let startDate, endDate;
+      
+      try {
+        // If from date is provided, use it; otherwise default to 7 days ago
+        startDate = from ? new Date(from) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        
+        // If to date is provided, use it; otherwise default to current time
+        endDate = to ? new Date(to) : new Date();
+
+        // Validate dates
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          throw new Error('Invalid date format');
+        }
+
+        // Ensure end date is not before start date
+        if (endDate < startDate) {
+          throw new Error('End date cannot be before start date');
+        }
+      } catch (dateError) {
+        return res.status(400).json({ 
+          error: 'Invalid date parameters', 
+          details: dateError.message 
+        });
       }
 
       // Fetch all contributors to identify first-time contributors
@@ -55,41 +68,75 @@ class LeaderboardController {
         }
       );
 
-      // Get historical contributors (those who contributed before the time frame)
-      const historicalContributors = new Set(allContributorsResponse.data.map(c => c.login));
+      // Get contributors who contributed before the start date
+      const historicalContributorsResponse = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/issues`,
+        {
+          params: {
+            state: 'all',
+            sort: 'updated',
+            direction: 'desc',
+            per_page: 100,
+            until: startDate.toISOString()
+          },
+          headers: {
+            Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+          }
+        }
+      );
+      
+      const historicalContributors = new Set(
+        historicalContributorsResponse.data
+          .map(item => item.user.login)
+      );
 
       // Fetch organization members (internal contributors)
-      const orgMembersResponse = await axios.get(`https://api.github.com/orgs/${owner}/members`, {
-        headers: {
-          Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+      const orgMembersResponse = await axios.get(
+        `https://api.github.com/orgs/${owner}/members`,
+        {
+          headers: {
+            Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+          }
         }
-      });
-      const internalContributors = new Set(orgMembersResponse.data.map(member => member.login));
+      );
+      const internalContributors = new Set(
+        orgMembersResponse.data.map(member => member.login)
+      );
 
-      // Fetch issues and pull requests
-      const issuesResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/issues`, {
-        params: {
-          state: 'all',
-          sort: 'updated',
-          direction: 'desc',
-          since,
-          per_page: 100,
-        },
-        headers: {
-          Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+      // Fetch issues and pull requests within the date range
+      const issuesResponse = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/issues`,
+        {
+          params: {
+            state: 'all',
+            sort: 'updated',
+            direction: 'desc',
+            since: startDate.toISOString(),
+            per_page: 100,
+          },
+          headers: {
+            Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+          }
         }
-      });
+      );
 
       const contributors = {};
-      const firstTimeContributorBonusGiven = new Set(); // Track first-time bonus recipients
+      const firstTimeContributorBonusGiven = new Set();
+
+      // Filter and process issues/PRs within the date range
+      const validIssues = issuesResponse.data.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate >= startDate && itemDate <= endDate;
+      });
 
       // Process each issue or pull request
-      for (const item of issuesResponse.data) {
+      for (const item of validIssues) {
         const username = item.user.login;
 
         // Skip internal contributors
         if (internalContributors.has(username)) continue;
 
+        // Filter by type if specified
         if (type !== 'all' && item.labels.every(label => label.name.toLowerCase() !== type)) continue;
 
         if (!contributors[username]) {
@@ -122,6 +169,7 @@ class LeaderboardController {
           type: item.pull_request ? 'Pull Request' : 'Issue',
           title: item.title,
           url: item.html_url,
+          createdAt: item.created_at,
           labels: item.labels.map(label => label.name),
           pointsEarned: pointsData.total,
           pointBreakdown: pointsData.breakdown
@@ -148,11 +196,21 @@ class LeaderboardController {
       res.json({
         leaderboard: sortedContributors,
         totalItems: sortedContributors.length,
-        pointSystem: LeaderboardController.pointSystem
+        pointSystem: LeaderboardController.pointSystem,
+        metadata: {
+          dateRange: {
+            from: startDate.toISOString(),
+            to: endDate.toISOString()
+          },
+          totalContributions: sortedContributors.reduce((sum, contributor) => sum + contributor.contributions, 0)
+        }
       });
     } catch (error) {
       console.error('Error fetching repo data:', error);
-      res.status(500).json({ error: 'Failed to fetch repository data', details: error.message });
+      res.status(500).json({ 
+        error: 'Failed to fetch repository data', 
+        details: error.message 
+      });
     }
   }
 

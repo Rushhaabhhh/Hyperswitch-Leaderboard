@@ -1,28 +1,213 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ArrowUpDown, Github, Trophy, ChevronDown } from 'lucide-react';
+import { Search, ArrowUpDown, Github, Trophy, ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { format, addMonths, subMonths, startOfMonth, isSameDay, isAfter, isBefore } from "date-fns";
+
+const DateRangePicker = ({ onConfirm, initialSelected }) => {
+  const [viewDate, setViewDate] = useState(startOfMonth(new Date()));
+  const [selectedStart, setSelectedStart] = useState(initialSelected?.from);
+  const [selectedEnd, setSelectedEnd] = useState(initialSelected?.to);
+  const [tempStart, setTempStart] = useState(null);
+  const [tempEnd, setTempEnd] = useState(null);
+
+  const daysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+  
+  const firstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const nextMonth = () => setViewDate(addMonths(viewDate, 1));
+  const prevMonth = () => setViewDate(subMonths(viewDate, 1));
+  
+  const handleDateClick = (date) => {
+    // If no start date is selected, set it
+    if (!tempStart) {
+      setTempStart(date);
+      setSelectedStart(null);
+      setSelectedEnd(null);
+      return;
+    }
+
+    // If start date is set, handle end date selection
+    if (isSameDay(date, tempStart)) {
+      // If same date is clicked, do nothing
+      return;
+    }
+
+    // Determine which date is earlier/later
+    if (isBefore(date, tempStart)) {
+      setTempEnd(tempStart);
+      setTempStart(date);
+    } else {
+      setTempEnd(date);
+    }
+  };
+
+  const isDateInRange = (date) => {
+    if (!tempStart || !tempEnd) return false;
+    
+    return (
+      (isAfter(date, tempStart) || isSameDay(date, tempStart)) && 
+      (isBefore(date, tempEnd) || isSameDay(date, tempEnd))
+    );
+  };
+
+  const isStartOrEndDate = (date) => {
+    return (tempStart && isSameDay(date, tempStart)) || 
+           (tempEnd && isSameDay(date, tempEnd));
+  };
+
+  const confirmSelection = () => {
+    if (tempStart && tempEnd) {
+      setSelectedStart(tempStart);
+      setSelectedEnd(tempEnd);
+      onConfirm({
+        from: tempStart,
+        to: tempEnd
+      });
+    }
+  };
+
+  const resetSelection = () => {
+    setTempStart(null);
+    setTempEnd(null);
+  };
+
+  const days = Array.from({ length: daysInMonth(viewDate) }, (_, i) => {
+    return new Date(viewDate.getFullYear(), viewDate.getMonth(), i + 1);
+  });
+  const blanks = Array.from({ length: firstDayOfMonth(viewDate) });
+  
+  return (
+    <div className="p-4 bg-gray-800 rounded-lg shadow-xl w-80">
+      {/* Month Navigation */}
+      <div className="flex justify-between items-center mb-4">
+        <button onClick={prevMonth} className="p-1 hover:bg-gray-700 rounded">
+          <ChevronLeft className="w-4 h-4 text-gray-400" />
+        </button>
+        <span className="text-gray-200 font-semibold">
+          {format(viewDate, 'MMMM yyyy')}
+        </span>
+        <button onClick={nextMonth} className="p-1 hover:bg-gray-700 rounded">
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+        </button>
+      </div>
+      
+      {/* Days of Week */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+          <div key={day} className="text-center text-gray-400 text-sm">{day}</div>
+        ))}
+      </div>
+      
+      {/* Days Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {blanks.map((_, i) => (
+          <div key={`blank-${i}`} className="h-8" />
+        ))}
+        {days.map(date => {
+          const inRange = isDateInRange(date);
+          const isStartEnd = isStartOrEndDate(date);
+          
+          return (
+            <button
+              key={date.toISOString()}
+              onClick={() => handleDateClick(date)}
+              className={`
+                h-8 w-8 rounded-full flex items-center justify-center transition-colors
+                ${isStartEnd ? 'bg-blue-600 text-white' : ''}
+                ${inRange ? 'bg-blue-600/30 text-white' : ''}
+                ${!isStartEnd && !inRange ? 'text-gray-300 hover:bg-gray-700' : ''}
+              `}
+            >
+              {date.getDate()}
+            </button>
+          );
+        })}
+      </div>
+      
+      {/* Selection Feedback */}
+      <div className="mt-4 space-y-2">
+        {tempStart && (
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-300">
+              Start Date: {tempStart ? format(tempStart, 'MMM d, yyyy') : 'Not selected'}
+            </span>
+            {tempStart && (
+              <button 
+                onClick={resetSelection}
+                className="text-red-400 hover:text-red-300 text-sm"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+        
+        {tempEnd && (
+          <div className="text-sm text-gray-300">
+            End Date: {format(tempEnd, 'MMM d, yyyy')}
+          </div>
+        )}
+        
+        {tempStart && tempEnd && (
+          <button 
+            onClick={confirmSelection}
+            className="w-full flex items-center justify-center gap-2 bg-green-600 text-white rounded-lg py-2 hover:bg-green-700 transition-colors"
+          >
+            <Check className="w-5 h-5" />
+            Confirm Date Range
+          </button>
+        )}
+        
+        {!tempStart && (
+          <div className="text-sm text-gray-400 text-center">
+            Select a start date
+          </div>
+        )}
+        
+        {tempStart && !tempEnd && (
+          <div className="text-sm text-gray-400 text-center">
+            Now select an end date
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeFrame, setTimeFrame] = useState('weekly');
-  const [expandedUser, setExpandedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('points_desc');
+  const [date, setDate] = useState({
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    to: new Date()
+  });
+  const [expandedUser, setExpandedUser] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const owner = 'juspay';
   const repo = 'hyperswitch';
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!date.from || !date.to) return;
+
       setLoading(true);
       setError(null);
       try {
+        const fromDate = date.from.toISOString();
+        const toDate = date.to.toISOString();
+        
         const response = await axios.get(
-          `http://localhost:5000/leaderboard/repo/${owner}/${repo}?timeFrame=${timeFrame}&sort=${sortOrder}`
+          `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
         );
         const { leaderboard = [] } = response.data;
         setLeaderboardData(leaderboard);
@@ -35,7 +220,31 @@ const Leaderboard = () => {
     };
 
     fetchData();
-  }, [timeFrame, sortOrder]);
+  }, [date.from, date.to, sortOrder]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const fromDate = date.from.toISOString();
+        const toDate = date.to.toISOString();
+        
+        const response = await axios.get(
+          `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
+        );
+        const { leaderboard = [] } = response.data;
+        setLeaderboardData(leaderboard);
+        setFilteredData(leaderboard);
+      } catch (err) {
+        setError('Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [date.from, date.to, sortOrder]);
 
   useEffect(() => {
     const filtered = leaderboardData.filter(contributor =>
@@ -112,18 +321,31 @@ const Leaderboard = () => {
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <select
-            value={timeFrame}
-            onChange={(e) => setTimeFrame(e.target.value)}
-            className="w-full p-3 pl-4 pr-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+        <div className="relative">
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className="w-full md:w-auto px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 flex items-center gap-2"
           >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="allTime">All Time</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <ChevronDown className="w-4 h-4" />
+            {date.from && date.to ? (
+              <>
+                {format(date.from, "MMM d, yyyy")} - {format(date.to, "MMM d, yyyy")}
+              </>
+            ) : (
+              <span>Pick a date range</span>
+            )}
+          </button>
+          {showCalendar && (
+            <div className="absolute top-full left-0 mt-2 z-50">
+              <DateRangePicker
+                initialSelected={date}
+                onConfirm={(newDate) => {
+                  setDate(newDate);
+                  setShowCalendar(false);
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="relative flex-1">
@@ -132,7 +354,7 @@ const Leaderboard = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search contributors..."
-            className="w-full p-3 pl-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 pl-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
@@ -229,20 +451,6 @@ const Leaderboard = () => {
                                   ))}
                                 </div>
                               </div>
-                              {/* <div className="text-sm">
-                                <div className="font-medium text-green-400">
-                                  +{detail.pointsEarned} points
-                                </div>
-                                <div className="text-gray-400 text-xs">
-                                  {Object.entries(detail.pointBreakdown).map(([key, value]) => 
-                                    key !== 'total' && value > 0 && (
-                                      <div key={key}>
-                                        {key.replace(/([A-Z])/g, ' $1').trim()}: +{value}
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              </div> */}
                             </div>
                           ))}
                         </div>

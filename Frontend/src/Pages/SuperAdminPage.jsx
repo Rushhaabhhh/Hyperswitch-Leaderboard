@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserX, Award, Search, UserPlus, UserMinus } from 'lucide-react';
+import { UserX, Award, Search, UserPlus, UserMinus, ArrowUpDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Footer from '../Components/Footer';
@@ -191,6 +191,15 @@ const SuperAdminPage = () => {
                             className="w-full md:w-64 pl-10 pr-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
+                    
+                    <button
+                            onClick={toggleSort}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 transition-colors"
+                    >
+                            <ArrowUpDown className="w-4 h-4" />
+                            {sortOrder === 'points_desc' ? 'Highest Points' : 'Lowest Points'}
+                    </button>
+                    
                 </div>
             </motion.div>
 
