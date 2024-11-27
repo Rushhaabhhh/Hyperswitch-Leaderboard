@@ -207,7 +207,7 @@ const Leaderboard = () => {
         const toDate = date.to.toISOString();
         
         const response = await axios.get(
-          `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
+          `http://localhost:5000/leaderboard/repo/${owner}/${repo}/external?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
         );
         const { leaderboard = [] } = response.data;
         setLeaderboardData(leaderboard);
@@ -222,29 +222,6 @@ const Leaderboard = () => {
     fetchData();
   }, [date.from, date.to, sortOrder]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const fromDate = date.from.toISOString();
-        const toDate = date.to.toISOString();
-        
-        const response = await axios.get(
-          `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
-        );
-        const { leaderboard = [] } = response.data;
-        setLeaderboardData(leaderboard);
-        setFilteredData(leaderboard);
-      } catch (err) {
-        setError('Failed to fetch data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [date.from, date.to, sortOrder]);
 
   useEffect(() => {
     const filtered = leaderboardData.filter(contributor =>

@@ -107,8 +107,8 @@ const SuperAdminPage = () => {
 
     const handleRemoveUser = async (username) => {
         try {
-            await axios.delete(
-                `http://localhost:5000/leaderboard/repo/${owner}/${repo}/contributor/${username}`
+            await axios.put(
+                `http://localhost:5000/leaderboard/users/${username}/type`,
             );
             fetchLeaderboardData();
         } catch (err) {

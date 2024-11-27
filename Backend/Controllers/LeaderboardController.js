@@ -1,6 +1,6 @@
 const axios = require('axios');
 const dotenv = require('dotenv');
-const { leaderboardTable } = require('../config/airtableConfig'); // Import Airtable tables
+const { leaderboardTable } = require('../config/airtableConfig');
 dotenv.config();
 
 class LeaderboardController {
@@ -54,7 +54,7 @@ class LeaderboardController {
   }
 
   static async fetchRepoData(req, res) {
-    const { owner, repo } = req.params;
+    const { owner, repo, userType } = req.params;
     const { sort = 'points_desc', type = 'all', from, to } = req.query;
 
     try {
@@ -64,11 +64,6 @@ class LeaderboardController {
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate < startDate) {
         return res.status(400).json({ error: 'Invalid date parameters' });
       }
-
-      const allContributorsResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repo}/contributors`,
-        { headers: { Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}` } }
-      );
 
       const historicalContributorsResponse = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/issues`,
@@ -84,13 +79,6 @@ class LeaderboardController {
       const historicalContributors = new Set(
         historicalContributorsResponse.data.map((item) => item.user.login)
       );
-
-      const orgMembersResponse = await axios.get(
-        `https://api.github.com/orgs/${owner}/members`,
-        { headers: { Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}` } }
-      );
-
-      const internalContributors = new Set(orgMembersResponse.data.map((member) => member.login));
 
       const issuesResponse = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/issues`,
@@ -110,8 +98,6 @@ class LeaderboardController {
         (issue) => new Date(issue.created_at) <= endDate
       )) {
         const username = item.user.login;
-
-        if (internalContributors.has(username)) continue;
 
         if (!contributors[username]) {
           const isFirstTimeContributor = !historicalContributors.has(username);
@@ -157,6 +143,7 @@ class LeaderboardController {
           ContributionID: contributor.details.map((d) => d.url).join(', '),
           Date: new Date().toISOString(),
           Description: JSON.stringify(contributor.details),
+          UserType: userType === 'external' ? 'External' : 'Internal',
         };
         await LeaderboardController.saveToAirtableOnce(leaderboardData);
       }
@@ -164,7 +151,10 @@ class LeaderboardController {
       res.json({
         leaderboard: sortedContributors,
         totalItems: sortedContributors.length,
-        metadata: { dateRange: { from: startDate, to: endDate } },
+        metadata: { 
+          dateRange: { from: startDate, to: endDate },
+          userType: userType
+        },
       });
     } catch (error) {
       console.error('Error fetching repo data:', error);
@@ -265,6 +255,61 @@ class LeaderboardController {
     }
   }
 
+  static async updateUserType(req, res) {
+    try {
+        const { username } = req.params;
+
+        // Validate input
+        if (!username) {
+            return res.status(400).json({ error: 'Username is required' });
+        }
+
+        // Find existing record for the user
+        const existingRecords = await leaderboardTable
+            .select({
+                filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
+                maxRecords: 1
+            })
+            .firstPage();
+
+        if (existingRecords.length === 0) {
+            return res.status(404).json({ error: 'No records found for this user' });
+        }
+
+        const userRecord = existingRecords[0];
+        const currentUserType = userRecord.get('UserType');
+
+        // Toggle between Internal and External
+        const newUserType = currentUserType === 'Internal' ? 'External' : 'Internal';
+
+        try {
+            // Update the UserType field in the existing record
+            await leaderboardTable.update(userRecord.id, {
+                'UserType': newUserType
+            });
+        } catch (updateError) {
+            console.error('Error updating user type in Airtable:', updateError);
+            return res.status(500).json({ 
+                error: 'Failed to update user type in database', 
+                details: updateError.message 
+            });
+        }
+
+        res.status(200).json({
+            message: 'User type toggled successfully',
+            username: username,
+            oldUserType: currentUserType,
+            newUserType: newUserType
+        });
+
+    } catch (error) {
+        console.error('Error in user type toggle process:', error);
+        res.status(500).json({ 
+            error: 'Failed to process user type toggle', 
+            details: error.message 
+        });
+    }
+  }
 }
 
 module.exports = LeaderboardController;
