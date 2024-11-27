@@ -18,6 +18,8 @@ const SuperAdminPage = () => {
     const [error, setError] = useState(null);
     const [sortOrder, setSortOrder] = useState('points_desc');
     const [activeTab, setActiveTab] = useState('contributors');
+    const [leaderboardData, setLeaderboardData] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
 
     const owner = 'juspay';
     const repo = 'hyperswitch';
@@ -64,6 +66,27 @@ const SuperAdminPage = () => {
             setLoading(false);
         }
     };
+
+    const updateUserPointsInLeaderboard = (username, pointsAdded, newTotalPoints) => {
+        // Create a new array with updated points
+        const updatedLeaderboard = leaderboardData.map(contributor => {
+          if (contributor.username === username) {
+            return {
+              ...contributor,
+              points: newTotalPoints, // Use the total points from the backend response
+              contributions: contributor.contributions + 1 // Optionally increment contributions
+            };
+          }
+          return contributor;
+        });
+    
+        // Re-sort the leaderboard
+        const sortedLeaderboard = updatedLeaderboard.sort((a, b) => b.points - a.points);
+        
+        // Update both leaderboard and filtered data
+        setLeaderboardData(sortedLeaderboard);
+        setFilteredData(sortedLeaderboard);
+      };
 
     const fetchAdminsData = async () => {
         setLoading(true);
@@ -128,17 +151,18 @@ const SuperAdminPage = () => {
         }
     };
 
-    const handleUpdatePoints = async (username, points, reason) => {
-        try {
-            await axios.patch(
-                `http://localhost:5000/leaderboard/repo/${owner}/${repo}/contributor/${username}/points`,
-                { pointsToAdd: points, reason }
-            );
-            await fetchLeaderboardData();
-        } catch (err) {
-            setError('Failed to update points');
-        }
+    const handleUpdatePoints = async (username, pointsAdded, newTotalPoints) => {
+        // Update the users state to reflect the new points
+        setUsers(prevUsers => 
+            prevUsers.map(user => 
+                user.username === username 
+                    ? { ...user, points: newTotalPoints } 
+                    : user
+            )
+        );
     };
+
+    
 
     const filteredUsers = users.filter(user => 
         user.username?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -343,8 +367,7 @@ const SuperAdminPage = () => {
                 isOpen={showPointsModal}
                 onClose={() => setShowPointsModal(false)}
                 user={selectedUser}
-                onUpdate={handleUpdatePoints}
-            />
+                onUpdate={updateUserPointsInLeaderboard}            />
 
             <AdminManagementModal
                 isOpen={showAdminModal}

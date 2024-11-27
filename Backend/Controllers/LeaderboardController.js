@@ -1,6 +1,6 @@
 const axios = require('axios');
 const dotenv = require('dotenv');
-const { contributorsTable, leaderboardTable } = require('../config/airtableConfig'); // Import Airtable tables
+const { leaderboardTable } = require('../config/airtableConfig'); // Import Airtable tables
 dotenv.config();
 
 class LeaderboardController {
@@ -22,8 +22,27 @@ class LeaderboardController {
     },
   };
 
-  static async saveToAirtable(data) {
+  static async saveToAirtableOnce(data) {
     try {
+      // Escape single quotes in formula values
+      const escapedUsername = data.Username.replace(/'/g, "\\'");
+      const escapedContributionID = data.ContributionID.replace(/'/g, "\\'");
+
+      // Construct a valid filter formula
+      const filterFormula = `AND({Username} = '${escapedUsername}', {ContributionID} = '${escapedContributionID}')`;
+
+      // Check if the record already exists
+      const existingRecords = await leaderboardTable
+        .select({
+          filterByFormula: filterFormula,
+        })
+        .firstPage();
+
+      if (existingRecords.length > 0) {
+        return; 
+      }
+
+      // Save the new record
       await leaderboardTable.create([
         {
           fields: data,
@@ -129,18 +148,17 @@ class LeaderboardController {
 
       const sortedContributors = Object.values(contributors).sort((a, b) => b.points - a.points);
 
-      // Save leaderboard data to Airtable
+      // Save leaderboard data to Airtable only once per user
       for (const contributor of sortedContributors) {
         const leaderboardData = {
           Username: contributor.username,
           Points: contributor.points,
-          ContributionType: contributor.details.map(d => d.type).join(', '), 
-          ContributionID: contributor.details.map(d => d.url).join(', '), 
-          Date: new Date().toISOString(), 
-          Description: JSON.stringify(contributor.details), 
-          // UserType: contributor.isFirstTime ? 'New Contributor' : 'Returning Contributor', 
+          ContributionType: contributor.details.map((d) => d.type).join(', '),
+          ContributionID: contributor.details.map((d) => d.url).join(', '),
+          Date: new Date().toISOString(),
+          Description: JSON.stringify(contributor.details),
         };
-        await LeaderboardController.saveToAirtable(leaderboardData);
+        await LeaderboardController.saveToAirtableOnce(leaderboardData);
       }
 
       res.json({
@@ -187,6 +205,66 @@ class LeaderboardController {
 
     return { total: totalPoints, breakdown };
   }
+
+  static async updateUserPoints(req, res) {
+    try {
+        const { username } = req.params;
+        const { 
+            pointsToAdd = 0, 
+            reason = '',
+            contributionDetails = {}
+        } = req.body;
+
+        // Validate input
+        if (!username) {
+            return res.status(400).json({ error: 'Username is required' });
+        }
+
+        // Find existing record for the user
+        const existingRecords = await leaderboardTable
+            .select({
+                filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
+                maxRecords: 1
+            })
+            .firstPage();
+
+        if (existingRecords.length === 0) {
+            return res.status(404).json({ error: 'No records found for this user' });
+        }
+
+        const userRecord = existingRecords[0];
+        const currentPoints = parseFloat(userRecord.get('Points') || 0);
+        const adjustedPoints = currentPoints + pointsToAdd;
+
+        try {
+            // Update only the Points field in the existing record
+            await leaderboardTable.update(userRecord.id, {
+                'Points': adjustedPoints
+            });
+        } catch (updateError) {
+            console.error('Error updating points in Airtable:', updateError);
+            return res.status(500).json({ 
+                error: 'Failed to update points in database', 
+                details: updateError.message 
+            });
+        }
+
+        res.status(200).json({
+            message: 'Points updated successfully',
+            newPoints: adjustedPoints,
+            oldPoints: currentPoints,
+            username: username
+        });
+
+    } catch (error) {
+        console.error('Error in point update process:', error);
+        res.status(500).json({ 
+            error: 'Failed to process point update', 
+            details: error.message 
+        });
+    }
+  }
+
 }
 
 module.exports = LeaderboardController;
