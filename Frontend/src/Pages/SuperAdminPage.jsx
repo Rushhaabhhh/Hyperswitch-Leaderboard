@@ -23,6 +23,8 @@ const SuperAdminPage = () => {
 
     const owner = 'juspay';
     const repo = 'hyperswitch';
+    const fromDate = '2021-01-01';
+    const toDate = new Date();
 
     // Error auto-dismiss effect
     useEffect(() => {
@@ -55,8 +57,9 @@ const SuperAdminPage = () => {
     const fetchLeaderboardData = async () => {
         setLoading(true);
         try {
+            await axios.get(`http://localhost:5000/leaderboard/github/fetch/${owner}/${repo}`);
             const response = await axios.get(
-                `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}`
+                `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}from=${fromDate}&to=${toDate}`
             );
             const { leaderboard = [] } = response.data;
             setUsers(leaderboard);
@@ -67,26 +70,55 @@ const SuperAdminPage = () => {
         }
     };
 
-    const updateUserPointsInLeaderboard = (username, pointsAdded, newTotalPoints) => {
-        // Create a new array with updated points
-        const updatedLeaderboard = leaderboardData.map(contributor => {
-          if (contributor.username === username) {
-            return {
-              ...contributor,
-              points: newTotalPoints, // Use the total points from the backend response
-              contributions: contributor.contributions + 1 // Optionally increment contributions
-            };
-          }
-          return contributor;
-        });
+    const handleUpdatePoints = async (username, pointsAdded, reason = '') => {
+        try {
+            // Call backend to update points
+            const response = await axios.post(`http://localhost:5000/leaderboard/points/${username}`, {
+                pointsToAdd: pointsAdded,
+                reason: reason
+            });
     
-        // Re-sort the leaderboard
-        const sortedLeaderboard = updatedLeaderboard.sort((a, b) => b.points - a.points);
-        
-        // Update both leaderboard and filtered data
-        setLeaderboardData(sortedLeaderboard);
-        setFilteredData(sortedLeaderboard);
-      };
+            // Update leaderboard state
+            const updatedLeaderboard = leaderboardData.map(contributor => {
+                if (contributor.username === username) {
+                    return {
+                        ...contributor,
+                        points: response.data.newPoints, 
+                        contributions: contributor.contributions + 1
+                    };
+                }
+                return contributor;
+            });
+    
+            // Re-sort the leaderboard
+            const sortedLeaderboard = updatedLeaderboard.sort((a, b) => b.points - a.points);
+            
+            // Update both leaderboard and filtered data
+            setLeaderboardData(sortedLeaderboard);
+            setFilteredData(sortedLeaderboard);
+    
+            // Update users state
+            setUsers(prevUsers =>
+                prevUsers.map(user =>
+                    user.username === username
+                        ? { 
+                            ...user, 
+                            points: response.data.newPoints 
+                        }
+                        : user
+                )
+            );
+    
+            setShowPointsModal(false);
+    
+        } catch (error) {
+            // Handle error scenarios
+            console.error('Failed to update points:', error);
+            
+        }
+    };
+    
+    
 
     const fetchAdminsData = async () => {
         setLoading(true);
@@ -151,16 +183,6 @@ const SuperAdminPage = () => {
         }
     };
 
-    const handleUpdatePoints = async (username, pointsAdded, newTotalPoints) => {
-        // Update the users state to reflect the new points
-        setUsers(prevUsers => 
-            prevUsers.map(user => 
-                user.username === username 
-                    ? { ...user, points: newTotalPoints } 
-                    : user
-            )
-        );
-    };
 
     
 
@@ -364,10 +386,18 @@ const SuperAdminPage = () => {
             </main>
 
             <PointsUpdateModal
-                isOpen={showPointsModal}
-                onClose={() => setShowPointsModal(false)}
-                user={selectedUser}
-                onUpdate={updateUserPointsInLeaderboard}            />
+        isOpen={showPointsModal}
+        onClose={() => setShowPointsModal(false)}
+        user={selectedUser}
+        onUpdate={(username, pointsAdded) => {
+            // You might want to pass a reason here as well
+            handleUpdatePoints(
+                username, 
+                pointsAdded, 
+                `Manual points adjustment for ${username}`
+            );
+        }}
+    />
 
             <AdminManagementModal
                 isOpen={showAdminModal}

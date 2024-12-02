@@ -219,17 +219,51 @@ class LeaderboardController {
             .firstPage();
 
         if (existingRecords.length === 0) {
-            return res.status(404).json({ error: 'No records found for this user' });
+            // If no record exists, create a new one
+            const newRecord = await leaderboardTable.create([
+                {
+                    fields: {
+                        Username: username,
+                        Points: pointsToAdd,
+                        PointsHistory: JSON.stringify([{
+                            date: new Date().toISOString(),
+                            pointsAdded: pointsToAdd,
+                            reason: reason
+                        }])
+                    }
+                }
+            ]);
+
+            return res.status(201).json({
+                message: 'New user record created with points',
+                newPoints: pointsToAdd,
+                username: username
+            });
         }
 
         const userRecord = existingRecords[0];
         const currentPoints = parseFloat(userRecord.get('Points') || 0);
         const adjustedPoints = currentPoints + pointsToAdd;
 
+        // Prepare points history
+        const existingHistory = userRecord.get('PointsHistory') 
+            ? JSON.parse(userRecord.get('PointsHistory')) 
+            : [];
+        const updatedHistory = [
+            ...existingHistory,
+            {
+                date: new Date().toISOString(),
+                pointsAdded: pointsToAdd,
+                reason: reason
+            }
+        ];
+
         try {
-            // Update only the Points field in the existing record
+            // Update record with new points and points history
             await leaderboardTable.update(userRecord.id, {
-                'Points': adjustedPoints
+                'Points': adjustedPoints,
+                'PointsHistory': JSON.stringify(updatedHistory),
+                // 'LastUpdated': new Date().toISOString()
             });
         } catch (updateError) {
             console.error('Error updating points in Airtable:', updateError);
@@ -239,11 +273,15 @@ class LeaderboardController {
             });
         }
 
+        // Return comprehensive response for frontend
         res.status(200).json({
             message: 'Points updated successfully',
             newPoints: adjustedPoints,
             oldPoints: currentPoints,
-            username: username
+            username: username,
+            pointsAdded: pointsToAdd,
+            reason: reason,
+            timestamp: new Date().toISOString()
         });
 
     } catch (error) {
