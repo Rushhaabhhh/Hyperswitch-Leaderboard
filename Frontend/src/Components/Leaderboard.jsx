@@ -4,7 +4,6 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { format, addMonths, subMonths, startOfMonth, isSameDay, isAfter, isBefore } from "date-fns";
 
-
 const DateRangePicker = ({ onConfirm, initialSelected }) => {
   const [viewDate, setViewDate] = useState(startOfMonth(new Date()));
   const [selectedStart, setSelectedStart] = useState(initialSelected?.from);
@@ -196,29 +195,20 @@ const Leaderboard = () => {
 
   const owner = 'juspay';
   const repo = 'hyperswitch';
-  const userType = 'external';
 
   useEffect(() => {
     const fetchData = async () => {
       if (!date.from || !date.to) return;
-    
+
       setLoading(true);
       setError(null);
-      
       try {
         const fromDate = date.from.toISOString();
         const toDate = date.to.toISOString();
         
-        // Fetch and store contributions
-        await axios.get(
-          `http://localhost:5000/leaderboard/github/fetch/${owner}/${repo}`
-        );
-    
-        // Retrieve leaderboard data
         const response = await axios.get(
-          `http://localhost:5000/leaderboard/leaderboard?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
+          `http://localhost:5000/leaderboard/${owner}/${repo}/external?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
         );
-    
         const { leaderboard = [] } = response.data;
         setLeaderboardData(leaderboard);
         setFilteredData(leaderboard);

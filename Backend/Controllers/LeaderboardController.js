@@ -1,6 +1,7 @@
 const axios = require('axios');
 const dotenv = require('dotenv');
 const { leaderboardTable } = require('../config/airtableConfig');
+const Redis = require('ioredis');
 dotenv.config();
 
 class LeaderboardController {
@@ -22,102 +23,81 @@ class LeaderboardController {
     },
   };
 
+  // Redis client initialization
+  static redisClient = new Redis({
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    // password: process.env.REDIS_PASSWORD,
+  });
+
+  // Caching configuration
+  static CACHE_KEY_PREFIX = 'gh_leaderboard:';
+  static CACHE_EXPIRATION = 24 * 60 * 60; // 24 hours in seconds
+
+  // Method to save data to Airtable with existing implementation
   static async saveToAirtableOnce(data) {
     try {
-      // Escape single quotes in formula values
       const escapedUsername = data.Username.replace(/'/g, "\\'");
       const escapedContributionID = data.ContributionID.replace(/'/g, "\\'");
+      const filterByFormula = `AND({Username} = '${escapedUsername}', {ContributionID} = '${escapedContributionID}')`;
 
-      // Construct a valid filter formula
-      const filterFormula = `AND({Username} = '${escapedUsername}', {ContributionID} = '${escapedContributionID}')`;
-
-      // Check if the record already exists
       const existingRecords = await leaderboardTable
-        .select({
-          filterByFormula: filterFormula,
-        })
+        .select({ filterByFormula })
         .firstPage();
 
       if (existingRecords.length > 0) {
-        return; 
+        return;
       }
 
-      // Save the new record
-      await leaderboardTable.create([
-        {
-          fields: data,
-        },
-      ]);
+      await leaderboardTable.create([{ fields: data }]);
     } catch (error) {
       console.error('Error saving data to Airtable:', error);
     }
   }
 
-  static async fetchRepoData(req, res) {
+  // Ensure this method uses arrow function or explicit binding
+  static fetchAndStoreAllTimeRepoData = async (req, res) => {
     const { owner, repo, userType } = req.params;
-    const { sort = 'points_desc', type = 'all', from, to } = req.query;
 
     try {
-      let startDate = from ? new Date(from) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      let endDate = to ? new Date(to) : new Date();
+      // Use class method with explicit reference to static properties
+      const cacheKey = `${LeaderboardController.CACHE_KEY_PREFIX}${owner}:${repo}:${userType}:all_time`;
+      const cachedData = await LeaderboardController.redisClient.get(cacheKey);
 
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate < startDate) {
-        return res.status(400).json({ error: 'Invalid date parameters' });
+      if (cachedData) {
+        return res.json(JSON.parse(cachedData));
       }
 
-      const historicalContributorsResponse = await axios.get(
+      const allTimeIssuesResponse = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/issues`,
         {
-          params: {
-            state: 'all',
-            until: startDate.toISOString(),
-          },
-          headers: { Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}` },
-        }
-      );
-
-      const historicalContributors = new Set(
-        historicalContributorsResponse.data.map((item) => item.user.login)
-      );
-
-      const issuesResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repo}/issues`,
-        {
-          params: {
-            state: 'all',
-            since: startDate.toISOString(),
-          },
+          params: { state: 'all' },
           headers: { Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}` },
         }
       );
 
       const contributors = {};
-      const firstTimeContributorBonusGiven = new Set();
+      const allHistoricalContributors = new Set();
 
-      for (const item of issuesResponse.data.filter(
-        (issue) => new Date(issue.created_at) <= endDate
-      )) {
-        const username = item.user.login;
+      for (const item of allTimeIssuesResponse.data) {
+        const username = item.user?.login;
+        
+        if (!username) continue; // Skip items without a username
+        
+        allHistoricalContributors.add(username);
 
         if (!contributors[username]) {
-          const isFirstTimeContributor = !historicalContributors.has(username);
           contributors[username] = {
             username,
             points: 0,
             contributions: 0,
             details: [],
-            isFirstTime: isFirstTimeContributor,
+            isFirstTime: true,
           };
         }
 
-        const pointsData = LeaderboardController.calculatePoints(
-          item,
-          contributors[username].isFirstTime && !firstTimeContributorBonusGiven.has(username)
-        );
-
-        if (pointsData.breakdown.firstTimeBonus > 0) {
-          firstTimeContributorBonusGiven.add(username);
-        }
+        // Use explicit class method reference
+        const pointsData = LeaderboardController.calculatePoints(item, true);
 
         contributors[username].points += pointsData.total;
         contributors[username].contributions++;
@@ -132,9 +112,11 @@ class LeaderboardController {
         });
       }
 
-      const sortedContributors = Object.values(contributors).sort((a, b) => b.points - a.points);
+      const sortedContributors = Object.values(contributors)
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 100);
 
-      // Save leaderboard data to Airtable only once per user
+      // Save each contributor to Airtable
       for (const contributor of sortedContributors) {
         const leaderboardData = {
           Username: contributor.username,
@@ -148,20 +130,32 @@ class LeaderboardController {
         await LeaderboardController.saveToAirtableOnce(leaderboardData);
       }
 
-      res.json({
+      const responseData = {
         leaderboard: sortedContributors,
         totalItems: sortedContributors.length,
         metadata: { 
-          dateRange: { from: startDate, to: endDate },
-          userType: userType
+          userType, 
+          fetchedAt: new Date().toISOString(),
+          totalContributors: Object.keys(contributors).length 
         },
-      });
+      };
+
+      // Use explicit class method and property references
+      await LeaderboardController.redisClient.set(
+        cacheKey, 
+        JSON.stringify(responseData), 
+        'EX', 
+        LeaderboardController.CACHE_EXPIRATION
+      );
+
+      res.json(responseData);
     } catch (error) {
-      console.error('Error fetching repo data:', error);
-      res.status(500).json({ error: 'Failed to fetch repository data' });
+      console.error('Error fetching all-time repo data:', error);
+      res.status(500).json({ error: 'Failed to fetch all-time repository data' });
     }
   }
 
+  // Static method for calculating points
   static calculatePoints(item, isEligibleForFirstTimeBonus) {
     const breakdown = {
       base: this.pointSystem.basePoints,
@@ -219,51 +213,17 @@ class LeaderboardController {
             .firstPage();
 
         if (existingRecords.length === 0) {
-            // If no record exists, create a new one
-            const newRecord = await leaderboardTable.create([
-                {
-                    fields: {
-                        Username: username,
-                        Points: pointsToAdd,
-                        PointsHistory: JSON.stringify([{
-                            date: new Date().toISOString(),
-                            pointsAdded: pointsToAdd,
-                            reason: reason
-                        }])
-                    }
-                }
-            ]);
-
-            return res.status(201).json({
-                message: 'New user record created with points',
-                newPoints: pointsToAdd,
-                username: username
-            });
+            return res.status(404).json({ error: 'No records found for this user' });
         }
 
         const userRecord = existingRecords[0];
         const currentPoints = parseFloat(userRecord.get('Points') || 0);
         const adjustedPoints = currentPoints + pointsToAdd;
 
-        // Prepare points history
-        const existingHistory = userRecord.get('PointsHistory') 
-            ? JSON.parse(userRecord.get('PointsHistory')) 
-            : [];
-        const updatedHistory = [
-            ...existingHistory,
-            {
-                date: new Date().toISOString(),
-                pointsAdded: pointsToAdd,
-                reason: reason
-            }
-        ];
-
         try {
-            // Update record with new points and points history
+            // Update only the Points field in the existing record
             await leaderboardTable.update(userRecord.id, {
-                'Points': adjustedPoints,
-                'PointsHistory': JSON.stringify(updatedHistory),
-                // 'LastUpdated': new Date().toISOString()
+                'Points': adjustedPoints
             });
         } catch (updateError) {
             console.error('Error updating points in Airtable:', updateError);
@@ -273,15 +233,11 @@ class LeaderboardController {
             });
         }
 
-        // Return comprehensive response for frontend
         res.status(200).json({
             message: 'Points updated successfully',
             newPoints: adjustedPoints,
             oldPoints: currentPoints,
-            username: username,
-            pointsAdded: pointsToAdd,
-            reason: reason,
-            timestamp: new Date().toISOString()
+            username: username
         });
 
     } catch (error) {
