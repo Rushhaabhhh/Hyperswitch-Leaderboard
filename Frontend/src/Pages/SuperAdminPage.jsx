@@ -56,7 +56,7 @@ const SuperAdminPage = () => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}`
+                `http://localhost:5000/leaderboard/${owner}/${repo}/external?sort=${sortOrder}`
             );
             const { leaderboard = [] } = response.data;
             setUsers(leaderboard);
@@ -107,12 +107,28 @@ const SuperAdminPage = () => {
 
     const handleRemoveUser = async (username) => {
         try {
-            await axios.put(
-                `http://localhost:5000/leaderboard/users/${username}/type`,
+            // Confirm action before proceeding
+            const confirmRemove = window.confirm(`Are you sure you want to toggle user type for ${username}?`);
+            if (!confirmRemove) return;
+    
+            // Update user type
+            const response = await axios.patch(
+                `http://localhost:5000/leaderboard/users/${username}`
             );
+    
+            // Update local state immediately for responsive UI
+            setUsers(prevUsers => 
+                prevUsers.map(user => 
+                    user.username === username 
+                        ? { ...user, userType: response.data.newUserType } 
+                        : user
+                )
+            );
+        
             fetchLeaderboardData();
         } catch (err) {
-            setError('Failed to remove user');
+            const errorMessage = err.response?.data?.message || 'Failed to remove user';
+            setError(errorMessage);
         }
     };
 
@@ -151,15 +167,51 @@ const SuperAdminPage = () => {
         }
     };
 
-    const handleUpdatePoints = async (username, pointsAdded, newTotalPoints) => {
-        // Update the users state to reflect the new points
-        setUsers(prevUsers => 
-            prevUsers.map(user => 
-                user.username === username 
-                    ? { ...user, points: newTotalPoints } 
-                    : user
-            )
-        );
+    const handleUpdatePoints = async (username, pointsToAdd, reason = '') => {
+        try {
+            // Validate inputs
+            if (!username || !pointsToAdd) {
+                throw new Error('Username and points are required');
+            }
+    
+            // Call backend to update points
+            const response = await axios.patch(
+                `http://localhost:5000/users/${username}/points`, 
+                { 
+                    pointsToAdd, 
+                    reason 
+                }
+            );
+    
+            // Destructure response for clarity
+            const { 
+                newPoints, 
+                oldPoints, 
+                username: updatedUsername, 
+                updatedAt 
+            } = response.data;
+    
+            // Update users state
+            setUsers(prevUsers => 
+                prevUsers.map(user => 
+                    user.username === updatedUsername 
+                        ? { 
+                            ...user, 
+                            points: newPoints,
+                            lastPointUpdate: updatedAt 
+                        } 
+                        : user
+                )
+            );
+    
+    
+            // Re-sort if needed
+            setUsers(prev => [...prev].sort((a, b) => b.points - a.points));
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || 'Failed to update points';
+            setError(errorMessage);
+            toast.error(errorMessage);
+        }
     };
 
     
@@ -367,7 +419,7 @@ const SuperAdminPage = () => {
                 isOpen={showPointsModal}
                 onClose={() => setShowPointsModal(false)}
                 user={selectedUser}
-                onUpdate={updateUserPointsInLeaderboard}            />
+                onUpdate={handleUpdatePoints}            />
 
             <AdminManagementModal
                 isOpen={showAdminModal}

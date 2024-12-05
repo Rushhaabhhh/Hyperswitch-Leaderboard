@@ -4,7 +4,7 @@ const LeaderboardController = require('../Controllers/LeaderboardController');
 
 router.get('/:owner/:repo/:userType', LeaderboardController.fetchAndStoreAllTimeRepoData);
 
-router.put('/users/:username/type', LeaderboardController.updateUserType);
+router.patch('/users/:username', LeaderboardController.updateUserType);
 
 router.patch('/points/:username', LeaderboardController.updateUserPoints);
 
