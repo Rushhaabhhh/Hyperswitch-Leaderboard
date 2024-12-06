@@ -1,7 +1,8 @@
+const cron = require('cron');
 const axios = require('axios');
 const dotenv = require('dotenv');
-const { leaderboardTable } = require('../config/airtableConfig');
 const Redis = require('ioredis');
+const { leaderboardTable } = require('../config/airtableConfig');
 dotenv.config();
 
 class LeaderboardController {
@@ -83,11 +84,30 @@ class LeaderboardController {
       const contributors = {};
       const allContributors = new Set();
 
-      // Helper function to process contributors
-      const processContributor = (item, type) => {
+      // Helper function to process contributors with user type filtering
+      const processContributor = async (item, type) => {
         // Check for valid user
         const username = item.user?.login;
         if (!username) return;
+
+        // Check user type before processing
+        const userTypeRecords = await leaderboardTable
+          .select({
+            filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
+            fields: ['Username', 'UserType']
+          })
+          .firstPage();
+
+        // Determine user type
+        const normalizedUserType = userType === 'external' ? 'External' : 'Internal';
+        const userTypeFromRecord = userTypeRecords.length > 0 
+          ? userTypeRecords[0].get('UserType') 
+          : normalizedUserType;
+
+        // Skip if user type doesn't match
+        if (userTypeFromRecord !== normalizedUserType) {
+          return;
+        }
 
         // Track first-time contributors
         if (!allContributors.has(username)) {
@@ -122,21 +142,21 @@ class LeaderboardController {
         });
       };
 
-      // Process all issues
-      issuesResponse.data.forEach((item) => {
+      // Process all issues with type filtering
+      for (const item of issuesResponse.data) {
         // Only process closed or merged issues
         if (item.state === 'closed' && !item.pull_request) {
-          processContributor(item, 'Issue');
+          await processContributor(item, 'Issue');
         }
-      });
+      }
 
-      // Process all pull requests
-      pullRequestsResponse.data.forEach((item) => {
+      // Process all pull requests with type filtering
+      for (const item of pullRequestsResponse.data) {
         // Only process merged pull requests
         if (item.merged_at) {
-          processContributor(item, 'Pull Request');
+          await processContributor(item, 'Pull Request');
         }
-      });
+      }
 
       // Sort contributors by points
       const sortedContributors = Object.values(contributors)
@@ -163,7 +183,7 @@ class LeaderboardController {
         metadata: { 
           userType, 
           fetchedAt: new Date().toISOString(),
-          totalContributors: Object.keys(contributors).length 
+          totalContributors: sortedContributors.length 
         },
       };
 
@@ -180,6 +200,35 @@ class LeaderboardController {
       console.error('Error fetching all-time repo data:', error);
       res.status(500).json({ error: 'Failed to fetch all-time repository data' });
     }
+  }
+
+  // New method to filter contributors by user type from Airtable
+  static filterContributorsByUserType = async (contributors, requestedUserType) => {
+    // Normalize user type
+    const normalizedUserType = requestedUserType === 'external' ? 'External' : 'Internal';
+
+    // Fetch user types from Airtable
+    const userTypeRecords = await leaderboardTable
+      .select({
+        fields: ['Username', 'UserType']
+      })
+      .all();
+
+    // Create a map of usernames to their types
+    const userTypeMap = new Map();
+    userTypeRecords.forEach(record => {
+      userTypeMap.set(
+        record.get('Username'), 
+        record.get('UserType')
+      );
+    });
+
+    // Filter contributors based on user type
+    return contributors.filter(contributor => {
+      // If no record exists, default to the requested user type
+      const userType = userTypeMap.get(contributor.username) || normalizedUserType;
+      return userType === normalizedUserType;
+    });
   }
 
   // Static method for calculating points
@@ -217,169 +266,229 @@ class LeaderboardController {
     return { total: totalPoints, breakdown };
   }
 
-  static async updateUserPoints(req, res) {
-    try {
-      const { username } = req.params;
-      const { 
-        pointsToAdd = 0, 
-        reason = '',
-        contributionDetails = {}
-      } = req.body;
-
-      // Validate input
-      if (!username) {
-        return res.status(400).json({ error: 'Username is required' });
-      }
-
-      // Find existing record for the user
-      const existingRecords = await leaderboardTable
-        .select({
-          filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
-          maxRecords: 1
-        })
-        .firstPage();
-
-      if (existingRecords.length === 0) {
-        return res.status(404).json({ error: 'No records found for this user' });
-      }
-
-      const userRecord = existingRecords[0];
-      const currentPoints = parseFloat(userRecord.get('Points') || 0);
-      const adjustedPoints = currentPoints + pointsToAdd;
-
+    // Enhanced method to update Redis cache
+    static updateUserCache = async (username, additionalData = {}) => {
       try {
-        // Update points in Airtable
-        await leaderboardTable.update(userRecord.id, {
-          'Points': adjustedPoints,
-          'LastPointUpdate': new Date().toISOString(),
-          'PointUpdateReason': reason
-        });
-
-        // Update Redis cache
-        const cacheKey = `${this.CACHE_KEY_PREFIX}user:${username}:points`;
-        await this.redisClient.set(
-          cacheKey, 
-          JSON.stringify({
-            points: adjustedPoints,
-            lastUpdated: new Date().toISOString(),
-            reason: reason,
-            details: contributionDetails
-          }),
-          'EX', 
-          this.CACHE_EXPIRATION
-        );
-
-        // Optional: Log point update event (you might want to implement a separate logging mechanism)
-        console.log(`Points updated for ${username}: +${pointsToAdd}, New Total: ${adjustedPoints}`);
-
-        res.status(200).json({
-          message: 'Points updated successfully',
-          newPoints: adjustedPoints,
-          oldPoints: currentPoints,
-          username: username,
-          updatedAt: new Date().toISOString(),
-          reason: reason
-        });
-
-      } catch (updateError) {
-        console.error('Error updating points in Airtable or Redis:', updateError);
-        return res.status(500).json({ 
-          error: 'Failed to update points in database', 
-          details: updateError.message 
-        });
+        // Fetch the most recent user record from Airtable
+        const existingRecords = await leaderboardTable
+          .select({
+            filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
+            maxRecords: 1
+          })
+          .firstPage();
+  
+        if (existingRecords.length === 0) {
+          console.error(`No record found for username: ${username}`);
+          return null;
+        }
+  
+        const userRecord = existingRecords[0];
+        
+        // Prepare cache data
+        const cacheData = {
+          username: userRecord.get('Username'),
+          points: parseFloat(userRecord.get('Points') || 0),
+          userType: userRecord.get('UserType'),
+          contributionDetails: userRecord.get('Description') 
+            ? JSON.parse(userRecord.get('Description')) 
+            : [],
+          lastUpdated: new Date().toISOString(),
+          ...additionalData
+        };
+  
+        // Create cache keys
+        const pointsCacheKey = `${this.CACHE_KEY_PREFIX}user:${username}:points`;
+        const typeCacheKey = `${this.CACHE_KEY_PREFIX}user:${username}:type`;
+        const detailsCacheKey = `${this.CACHE_KEY_PREFIX}user:${username}:details`;
+  
+        // Update multiple cache entries
+        await Promise.all([
+          this.redisClient.set(
+            pointsCacheKey, 
+            JSON.stringify({ points: cacheData.points }),
+            'EX', 
+            this.CACHE_EXPIRATION
+          ),
+          this.redisClient.set(
+            typeCacheKey, 
+            JSON.stringify({ userType: cacheData.userType }),
+            'EX', 
+            this.CACHE_EXPIRATION
+          ),
+          this.redisClient.set(
+            detailsCacheKey, 
+            JSON.stringify(cacheData),
+            'EX', 
+            this.CACHE_EXPIRATION
+          )
+        ]);
+  
+        return cacheData;
+      } catch (error) {
+        console.error('Error updating user cache:', error);
+        return null;
       }
-
-    } catch (error) {
-      console.error('Error in point update process:', error);
-      res.status(500).json({ 
-        error: 'Failed to process point update', 
-        details: error.message 
-      });
     }
-  }
-
-  // Enhanced updateUserType method
-  static async updateUserType(req, res) {
-    try {
-      const { username } = req.params;
-      const { userType } = req.body;
-
-      // Validate input
-      if (!username) {
-        return res.status(400).json({ error: 'Username is required' });
-      }
-
-      // Find existing record for the user
-      const existingRecords = await leaderboardTable
-        .select({
-          filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
-          maxRecords: 1
-        })
-        .firstPage();
-
-      if (existingRecords.length === 0) {
-        return res.status(404).json({ error: 'No records found for this user' });
-      }
-
-      const userRecord = existingRecords[0];
-      const currentUserType = userRecord.get('UserType');
-
-      // Determine new user type
-      let newUserType;
-      if (userType) {
-        // If specific user type is provided, use it
-        newUserType = ['Internal', 'External'].includes(userType)
-          ? userType
-          : currentUserType;
-      } else {
-        // Default to toggling if no specific type is provided
-        newUserType = currentUserType === 'Internal' ? 'External' : 'Internal';
-      }
-
+  
+    // Use arrow function for all methods to ensure correct 'this' binding
+    static updateUserPoints = async (req, res) => {
       try {
-        // Update user type in Airtable
-        await leaderboardTable.update(userRecord.id, {
-          'UserType': newUserType,
-        });
-
-        // Update Redis cache
-        const cacheKey = `${LeaderboardController.CACHE_KEY_PREFIX}user:${username}:type`;
-        await LeaderboardController.redisClient.set(
-          cacheKey, 
-          JSON.stringify({
-            userType: newUserType,
-          }),
-          'EX', 
-          LeaderboardController.CACHE_EXPIRATION
-        );
-
-        // Optional: Log user type change
-        console.log(`User type updated for ${username}: ${currentUserType} → ${newUserType}`);
-
-        res.status(200).json({
-          message: 'User type updated successfully',
-          username: username,
-          oldUserType: currentUserType,
-          newUserType: newUserType,
-          updatedAt: new Date().toISOString()
-        });
-
-      } catch (updateError) {
-        console.error('Error updating user type in Airtable or Redis:', updateError);
-        return res.status(500).json({ 
-          error: 'Failed to update user type in database', 
-          details: updateError.message 
+        const { username } = req.params;
+        const { 
+          pointsToAdd = 0, 
+          reason = '',
+          contributionDetails = {}
+        } = req.body;
+  
+        // Validate input
+        if (!username) {
+          return res.status(400).json({ error: 'Username is required' });
+        }
+  
+        // Find existing record for the user
+        const existingRecords = await leaderboardTable
+          .select({
+            filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
+            maxRecords: 1
+          })
+          .firstPage();
+  
+        if (existingRecords.length === 0) {
+          return res.status(404).json({ error: 'No records found for this user' });
+        }
+  
+        const userRecord = existingRecords[0];
+        const currentPoints = parseFloat(userRecord.get('Points') || 0);
+        const adjustedPoints = currentPoints + pointsToAdd;
+  
+        try {
+          // Retrieve existing contribution details
+          let existingDetails = userRecord.get('Description') 
+            ? JSON.parse(userRecord.get('Description')) 
+            : [];
+  
+          // Add new contribution details
+          if (Object.keys(contributionDetails).length > 0) {
+            existingDetails.push({
+              ...contributionDetails,
+              pointsAdded: pointsToAdd,
+              addedAt: new Date().toISOString()
+            });
+          }
+  
+          // Update points in Airtable
+          await leaderboardTable.update(userRecord.id, {
+            'Points': adjustedPoints,
+            'Description': JSON.stringify(existingDetails)
+          });
+  
+          // Update Redis cache
+          const updatedUserData = await this.updateUserCache(username, {
+            pointsAdded: pointsToAdd,
+            reason: reason
+          });
+  
+          res.status(200).json({
+            message: 'Points updated successfully',
+            userData: updatedUserData,
+            newPoints: adjustedPoints,
+            oldPoints: currentPoints,
+            username: username,
+            updatedAt: new Date().toISOString(),
+            reason: reason
+          });
+  
+        } catch (updateError) {
+          console.error('Error updating points in Airtable:', updateError);
+          return res.status(500).json({ 
+            error: 'Failed to update points in database', 
+            details: updateError.message 
+          });
+        }
+  
+      } catch (error) {
+        console.error('Error in point update process:', error);
+        res.status(500).json({ 
+          error: 'Failed to process point update', 
+          details: error.message 
         });
       }
-
-    } catch (error) {
-      console.error('Error in user type update process:', error);
-      res.status(500).json({ 
-        error: 'Failed to process user type update', 
-        details: error.message 
-      });
     }
-  }
+  
+    // Also use arrow function for updateUserType
+    static updateUserType = async (req, res) => {
+      try {
+        const { username } = req.params;
+        const { userType } = req.body;
+  
+        // Validate input
+        if (!username) {
+          return res.status(400).json({ error: 'Username is required' });
+        }
+  
+        // Find existing record for the user
+        const existingRecords = await leaderboardTable
+          .select({
+            filterByFormula: `LOWER({Username}) = LOWER("${username}")`,
+            maxRecords: 1
+          })
+          .firstPage();
+  
+        if (existingRecords.length === 0) {
+          return res.status(404).json({ error: 'No records found for this user' });
+        }
+  
+        const userRecord = existingRecords[0];
+        const currentUserType = userRecord.get('UserType');
+  
+        // Determine new user type
+        let newUserType;
+        if (userType) {
+          // If specific user type is provided, use it
+          newUserType = ['Internal', 'External'].includes(userType)
+            ? userType
+            : currentUserType;
+        } else {
+          // Default to toggling if no specific type is provided
+          newUserType = currentUserType === 'Internal' ? 'External' : 'Internal';
+        }
+  
+        try {
+          // Update user type in Airtable
+          await leaderboardTable.update(userRecord.id, {
+            'UserType': newUserType,
+          });
+  
+          // Update Redis cache
+          const updatedUserData = await this.updateUserCache(username, {
+            typeChanged: true
+          });
+  
+          res.status(200).json({
+            message: 'User type updated successfully',
+            userData: updatedUserData,
+            username: username,
+            oldUserType: currentUserType,
+            newUserType: newUserType,
+            updatedAt: new Date().toISOString()
+          });
+  
+        } catch (updateError) {
+          console.error('Error updating user type in Airtable:', updateError);
+          return res.status(500).json({ 
+            error: 'Failed to update user type in database', 
+            details: updateError.message 
+          });
+        }
+  
+      } catch (error) {
+        console.error('Error in user type update process:', error);
+        res.status(500).json({ 
+          error: 'Failed to process user type update', 
+          details: error.message 
+        });
+      }
+    }
 }
 
 module.exports = LeaderboardController;
