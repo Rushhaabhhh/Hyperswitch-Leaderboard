@@ -8,4 +8,5 @@ router.patch('/users/:username', LeaderboardController.updateUserType);
 
 router.patch('/points/:username', LeaderboardController.updateUserPoints);
 
+
 module.exports = router;

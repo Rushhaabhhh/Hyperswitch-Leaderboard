@@ -3,8 +3,14 @@
   "manifest": {
     "version": 1,
     "install": {
+      "cron": {
+        "pkg-path": "cron"
+      },
       "nodejs": {
         "pkg-path": "nodejs"
+      },
+      "nodemon": {
+        "pkg-path": "nodemon"
       }
     },
     "hook": {
@@ -26,19 +32,135 @@
   },
   "packages": [
     {
+      "attr_path": "cron",
+      "broken": false,
+      "derivation": "/nix/store/5swx6lhx4qp5sijn1x0avyix96ny0s3j-cron-4.1.drv",
+      "description": "Daemon for running commands at specific times",
+      "install_id": "cron",
+      "license": "0BSD",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "cron-4.1",
+      "pname": "cron",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/s6hni5s2x0r8mwqqn7vpysp550wflfrn-cron-4.1"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cron",
+      "broken": false,
+      "derivation": "/nix/store/6nsgz0fw7151cyx202kpib863l0k6fq6-cron-4.1.drv",
+      "description": "Daemon for running commands at specific times",
+      "install_id": "cron",
+      "license": "0BSD",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "cron-4.1",
+      "pname": "cron",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/i1ydkkzg73qm603lyh39wkaxqhigvlvf-cron-4.1"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cron",
+      "broken": false,
+      "derivation": "/nix/store/rm7nac7q4k1vi6snza30pp1wscnx2ms5-cron-4.1.drv",
+      "description": "Daemon for running commands at specific times",
+      "install_id": "cron",
+      "license": "0BSD",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "cron-4.1",
+      "pname": "cron",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/sldki9bp9020qdpbwm3y7hs1n2wq9gld-cron-4.1"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cron",
+      "broken": false,
+      "derivation": "/nix/store/c1dgxn1ixfxvs2agbl0p8cv5h8rzk7lj-cron-4.1.drv",
+      "description": "Daemon for running commands at specific times",
+      "install_id": "cron",
+      "license": "0BSD",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "cron-4.1",
+      "pname": "cron",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "4.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/0730v7cfl2n9glkk3hbxj3zk7ca5h56c-cron-4.1"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
       "attr_path": "nodejs",
       "broken": false,
       "derivation": "/nix/store/cpc9p6bxbw3sy02m28vwp1ixv4rwr51g-nodejs-20.18.1.drv",
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=55d15ad12a74eb7d4646254e13638ad0c4128776",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
       "name": "nodejs-20.18.1",
       "pname": "nodejs",
-      "rev": "55d15ad12a74eb7d4646254e13638ad0c4128776",
-      "rev_count": 716003,
-      "rev_date": "2024-12-03T07:54:31Z",
-      "scrape_date": "2024-12-04T03:55:34Z",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
       "stabilities": [
         "unstable"
       ],
@@ -62,13 +184,13 @@
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=55d15ad12a74eb7d4646254e13638ad0c4128776",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
       "name": "nodejs-20.18.1",
       "pname": "nodejs",
-      "rev": "55d15ad12a74eb7d4646254e13638ad0c4128776",
-      "rev_count": 716003,
-      "rev_date": "2024-12-03T07:54:31Z",
-      "scrape_date": "2024-12-04T03:55:34Z",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
       "stabilities": [
         "unstable"
       ],
@@ -92,13 +214,13 @@
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=55d15ad12a74eb7d4646254e13638ad0c4128776",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
       "name": "nodejs-20.18.1",
       "pname": "nodejs",
-      "rev": "55d15ad12a74eb7d4646254e13638ad0c4128776",
-      "rev_count": 716003,
-      "rev_date": "2024-12-03T07:54:31Z",
-      "scrape_date": "2024-12-04T03:55:34Z",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
       "stabilities": [
         "unstable"
       ],
@@ -122,13 +244,13 @@
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=55d15ad12a74eb7d4646254e13638ad0c4128776",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
       "name": "nodejs-20.18.1",
       "pname": "nodejs",
-      "rev": "55d15ad12a74eb7d4646254e13638ad0c4128776",
-      "rev_count": 716003,
-      "rev_date": "2024-12-03T07:54:31Z",
-      "scrape_date": "2024-12-04T03:55:34Z",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
       "stabilities": [
         "unstable"
       ],
@@ -140,6 +262,122 @@
       "outputs": {
         "libv8": "/nix/store/6cpw80r57lyippnjl5knrvymcwalv1m2-nodejs-20.18.1-libv8",
         "out": "/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodemon",
+      "broken": false,
+      "derivation": "/nix/store/wc65xnqfryim6scag5k1wkv6nqqkyyg3-nodemon-3.1.7.drv",
+      "description": "Simple monitor script for use during development of a Node.js app",
+      "install_id": "nodemon",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "nodemon-3.1.7",
+      "pname": "nodemon",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "3.1.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/jyma37lrhs9a2vsr3nmwn84c4zd3599z-nodemon-3.1.7"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodemon",
+      "broken": false,
+      "derivation": "/nix/store/gh3kjmnd6dqcpnaxy86k2akw7nizrdlr-nodemon-3.1.7.drv",
+      "description": "Simple monitor script for use during development of a Node.js app",
+      "install_id": "nodemon",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "nodemon-3.1.7",
+      "pname": "nodemon",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "3.1.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/fxjh3jriwvrzvqs0wdrs7z8pmfbcz4sg-nodemon-3.1.7"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodemon",
+      "broken": false,
+      "derivation": "/nix/store/isrq9mqkdpxi8wsmslsnd82y4swccjzi-nodemon-3.1.7.drv",
+      "description": "Simple monitor script for use during development of a Node.js app",
+      "install_id": "nodemon",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "nodemon-3.1.7",
+      "pname": "nodemon",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "3.1.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/rpfxqn5685305p818ciqc8cvzck24vh2-nodemon-3.1.7"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodemon",
+      "broken": false,
+      "derivation": "/nix/store/nsky554szrlc2z44a2pcmd4qa4grg90k-nodemon-3.1.7.drv",
+      "description": "Simple monitor script for use during development of a Node.js app",
+      "install_id": "nodemon",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "name": "nodemon-3.1.7",
+      "pname": "nodemon",
+      "rev": "d0797a04b81caeae77bcff10a9dde78bc17f5661",
+      "rev_count": 717074,
+      "rev_date": "2024-12-05T09:53:19Z",
+      "scrape_date": "2024-12-07T04:05:05Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "3.1.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/q9zi4k1ssw831waxxpli9wybq9a5ycl3-nodemon-3.1.7"
       },
       "system": "x86_64-linux",
       "group": "toplevel",

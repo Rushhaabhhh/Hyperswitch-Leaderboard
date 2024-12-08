@@ -7,6 +7,8 @@ router.get('/github', UserController.githubLogin);
 router.get('/github/callback', UserController.githubCallback);
 router.post('/logout', UserController.logout);
 
+router.get('/:username', UserController.getUserData);
+
 // User profile routes
 router.get('/profile', UserController.getUserProfile);
 router.put('/profile', UserController.updateProfile);

@@ -10,6 +10,8 @@ version = 1
 # the `[install]` section.
 [install]
 nodejs = { pkg-path = "nodejs" }
+nodemon.pkg-path = "nodemon"
+cron.pkg-path = "cron"
 
 # Set environment variables in the `[vars]` section. These variables may not
 # reference one another, and are added to the environment without first
