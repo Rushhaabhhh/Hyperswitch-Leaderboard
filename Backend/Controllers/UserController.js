@@ -199,40 +199,26 @@ exports.removeAdminRole = async (req, res) => {
         //     return res.status(403).json({ message: 'Forbidden: Only super-admin can remove roles.' });
         // }
 
-        const { recordId } = req.params;
+        const { userId } = req.body;
 
-        const adminRecord = await contributorsTable.find(recordId);
-        if (!adminRecord) {
-            return res.status(404).json({ message: 'Admin record not found' });
+        if (!userId) {
+            return res.status(400).json({ message: 'Bad Request: userId is required.' });
         }
 
-        await contributorsTable.destroy([recordId]);
-
-        console.info('Admin record removed:', recordId);
-        res.json({ 
-            message: 'Admin removed successfully',
-            removedId: recordId
-        });
-    } catch (error) {
-        console.error('Error removing admin:', error);
-        res.status(500).json({ message: 'Error removing admin' });
-    }
-};
-
-exports.getUserData = async (req, res) => {
-    try {
-        const { username } = req.params;
-        const records = await contributorsTable.select({
-            filterByFormula: `{Username} = '${username}'`
-        }).firstPage();
-
-        if (records.length === 0) {
+        const userToUpdate = await contributorsTable.find(userId);
+        if (!userToUpdate) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        res.json(records[0]);
+        const newAdmin = await contributorsTable.update([{
+            id: userToUpdate.id,
+            fields: { Role: 'user' }
+        }]);
+
+        console.info('Role removed from user:', userId);
+        res.json({ message: 'Role removed successfully', user: newAdmin[0] });
     } catch (error) {
-        console.error('Error fetching user data:', error);
-        res.status(500).json({ message: 'Error fetching user data' });
+        console.error(error);
+        res.status(500).json({ message: 'Error removing admin role' });
     }
-}
+};

@@ -32,7 +32,7 @@ class LeaderboardController {
   });
 
   // Caching configuration
-  static CACHE_KEY_PREFIX = 'HyperSwitch :';
+  static CACHE_KEY_PREFIX = 'gh_leaderboard:';
   static CACHE_EXPIRATION = 24 * 60 * 60; 
 
   // Method to save data to Airtable with existing implementation

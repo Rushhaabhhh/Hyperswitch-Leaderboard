@@ -1,10 +1,12 @@
-import React, { useState } from "react";
 import axios from "axios";
+import React, { useState } from "react";
 import { toast } from "react-toastify"; 
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 const PointsUpdateModal = ({ isOpen, onClose, user, onUpdate }) => {
-    const [pointsToAdd, setPointsToAdd] = useState(0);
     const [reason, setReason] = useState('');
+    const [pointsToAdd, setPointsToAdd] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
   
     const pointCategories = [
@@ -35,7 +37,7 @@ const PointsUpdateModal = ({ isOpen, onClose, user, onUpdate }) => {
             );
 
             try {
-                const response = await axios.patch(`http://localhost:5000/leaderboard/points/${user.username}`, {
+                const response = await axios.patch(`${API_BASE_URL}/leaderboard/points/${user.username}`, {
                     pointsToAdd,
                     reason: reason || selectedCategory?.label || 'Manual Points Update',
                     contributionDetails: {
@@ -44,13 +46,11 @@ const PointsUpdateModal = ({ isOpen, onClose, user, onUpdate }) => {
                     }
                 });
         
-                // Use the backend's returned points instead of local calculation
                 toast.success(`Successfully added ${pointsToAdd} points to ${user.username}`);
         
                 // Pass the new total points from the backend response
                 onUpdate(user.username, pointsToAdd, response.data.newPoints);
         
-                // Reset and close
                 setPointsToAdd(0);
                 setReason('');
                 onClose();

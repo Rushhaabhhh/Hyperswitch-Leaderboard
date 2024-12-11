@@ -7,8 +7,6 @@ router.get('/github', UserController.githubLogin);
 router.get('/github/callback', UserController.githubCallback);
 router.post('/logout', UserController.logout);
 
-router.get('/:username', UserController.getUserData);
-
 // User profile routes
 router.get('/profile', UserController.getUserProfile);
 router.put('/profile', UserController.updateProfile);
@@ -16,6 +14,6 @@ router.put('/profile', UserController.updateProfile);
 // Admin management routes
 router.get('/get-admin', UserController.getAdmins);
 router.post('/assign-admin', UserController.assignAdminRole);
-router.delete('/remove-admin/:recordId', UserController.removeAdminRole);
+router.delete('/remove-admin', UserController.removeAdminRole);
 
 module.exports = router;

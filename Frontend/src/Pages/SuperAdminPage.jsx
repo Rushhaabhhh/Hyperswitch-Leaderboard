@@ -138,9 +138,9 @@ const SuperAdminPage = () => {
                 return;
             }
 
-            await axios.delete(
-                `http://localhost:5000/auth/remove-admin/${admin.id}`
-            );
+            await axios.delete('http://localhost:5000/auth/remove-admin', {
+                data: { userId: admin.id },
+            });
 
             // Remove the admin from local state immediately for better UX
             setAdmins(prevAdmins => prevAdmins.filter(a => a.id !== admin.id));

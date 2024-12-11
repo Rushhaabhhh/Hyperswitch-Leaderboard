@@ -1,23 +1,23 @@
+import axios from 'axios';
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import { UserX, Award, Search, ArrowUpDown } from 'lucide-react';
-import { motion } from 'framer-motion';
-import axios from 'axios';
 
 import Footer from '../Components/Footer';
-import PointsUpdateModal from '../Components/PointsUpdateModal';
 import Navbar from '../Components/AdminNavbar';
+import PointsUpdateModal from '../Components/PointsUpdateModal';
 
 const AdminPage = () => {
     const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedUser, setSelectedUser] = useState(null);
     const [showPointsModal, setShowPointsModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [sortOrder, setSortOrder] = useState('points_desc');
 
-    const owner = 'juspay';
-    const repo = 'hyperswitch';
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+    const owner = process.env.REACT_APP_OWNER;
+    const repo = process.env.REACT_APP_REPO;
 
     useEffect(() => {
         fetchLeaderboardData();
@@ -27,7 +27,7 @@ const AdminPage = () => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:5000/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}`
+                `${API_BASE_URL}/leaderboard/repo/${owner}/${repo}?sort=${sortOrder}`
             );
             const { leaderboard = [] } = response.data;
             setUsers(leaderboard);
@@ -41,7 +41,7 @@ const AdminPage = () => {
     const handleRemoveUser = async (username) => {
         try {
             await axios.delete(
-                `http://localhost:5000/leaderboard/repo/${owner}/${repo}/contributor/${username}`
+                `${API_BASE_URL}/leaderboard/repo/${owner}/${repo}/contributor/${username}`
             );
             fetchLeaderboardData();
         } catch (err) {
@@ -52,7 +52,7 @@ const AdminPage = () => {
     const handleUpdatePoints = async (username, points, reason) => {
         try {
             await axios.patch(
-                `http://localhost:5000/leaderboard/repo/${owner}/${repo}/contributor/${username}/points`,
+                `${API_BASE_URL}/leaderboard/repo/${owner}/${repo}/contributor/${username}/points`,
                 { pointsToAdd: points, reason }
             );
             await fetchLeaderboardData();

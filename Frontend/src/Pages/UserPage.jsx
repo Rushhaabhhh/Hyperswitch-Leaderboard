@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { FaPencilAlt, FaGithub } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { FaPencilAlt, } from 'react-icons/fa';
 import { ChevronDown, ArrowUpDown, Tag } from 'lucide-react';
+
 import Footer from '../Components/Footer.jsx';
 
 // Dummy user data
