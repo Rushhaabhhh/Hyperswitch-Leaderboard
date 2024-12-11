@@ -22,10 +22,12 @@ services:
     networks:
       - mynetwork
     environment: 
-      - REDIS_HOST = redis
-      - REDIS_PORT = 6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       - redis
+    volumes:
+      - ./Backend:/app
 
   redis:
     image: redis:latest
