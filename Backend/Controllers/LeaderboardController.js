@@ -3,6 +3,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const Redis = require('ioredis');
 const { leaderboardTable } = require('../config/airtableConfig');
+
 dotenv.config();
 
 class LeaderboardController {
