@@ -30,9 +30,7 @@ module.exports = function(passport) {
                     fields: {
                         GithubId: githubId,
                         Username: username,
-                        TotalPoints: 0,
                         ProfileLink: profileLink,
-                        Rank: 'Newbie', 
                         Role: 'user',
                     }
                 }]);

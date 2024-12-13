@@ -31,7 +31,7 @@ const Leaderboard = () => {
     try {
       const { from, to } = dateRange;
       const response = await axios.get(
-        `${API_BASE_URL}/leaderboard/external?save=&refresh=false&owner=${repoOwner}&repo=${repoName}`, 
+        `${API_BASE_URL}/leaderboard/${repoOwner}/${repoName}/External`, 
         {
           params: {
             sort: sortOrder,
@@ -227,7 +227,7 @@ const Leaderboard = () => {
                         onClick={() => toggleExpandedContributor(contributor.username)}
                         className="text-blue-400 hover:text-blue-300"
                       >
-                        {expandedUser === contributor.username ? 'Hide' : 'Show'}
+                        {expandedContributor === contributor.username ? 'Hide' : 'Show'}
                       </button>
                     </td>
                   </motion.tr>
