@@ -179,7 +179,7 @@ exports.assignAdminRole = async (req, res) => {
             }
         ]);
 
-        res.json({ message: 'Role updated successfully', user: newAdmin[0] });
+        res.json({ message: 'Admin assigned successfully'});
     } catch (error) {
         console.error('Error assigning admin role:', error);
         res.status(500).json({ message: 'Error assigning admin role' });
@@ -204,7 +204,7 @@ exports.removeAdminRole = async (req, res) => {
             fields: { Role: 'user' }
         }]);
 
-        res.json({ message: 'Role removed successfully', user: updatedUser[0] });
+        res.json({ message: 'Admin Role removed successfully'});
     } catch (error) {
         console.error('Error removing admin role:', error);
         res.status(500).json({ message: 'Error removing admin role' });

@@ -1,266 +1,92 @@
 import axios from 'axios';
+import { format } from "date-fns";
 import { motion } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
-import { format, addMonths, subMonths, startOfMonth, isSameDay, isAfter, isBefore } from "date-fns";
-import { Search, ArrowUpDown, Github, Trophy, ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-react';
-
-const DateRangePicker = ({ onConfirm, initialSelected }) => {
-  const [viewDate, setViewDate] = useState(startOfMonth(new Date()));
-  const [selectedStart, setSelectedStart] = useState(initialSelected?.from);
-  const [selectedEnd, setSelectedEnd] = useState(initialSelected?.to);
-  const [tempStart, setTempStart] = useState(null);
-  const [tempEnd, setTempEnd] = useState(null);
-
-  const daysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-  
-  const firstDayOfMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
-
-  const nextMonth = () => setViewDate(addMonths(viewDate, 1));
-  const prevMonth = () => setViewDate(subMonths(viewDate, 1));
-  
-  const handleDateClick = (date) => {
-    // If no start date is selected, set it
-    if (!tempStart) {
-      setTempStart(date);
-      setSelectedStart(null);
-      setSelectedEnd(null);
-      return;
-    }
-
-    // If start date is set, handle end date selection
-    if (isSameDay(date, tempStart)) {
-      // If same date is clicked, do nothing
-      return;
-    }
-
-    // Determine which date is earlier/later
-    if (isBefore(date, tempStart)) {
-      setTempEnd(tempStart);
-      setTempStart(date);
-    } else {
-      setTempEnd(date);
-    }
-  };
-
-  const isDateInRange = (date) => {
-    if (!tempStart || !tempEnd) return false;
-    
-    return (
-      (isAfter(date, tempStart) || isSameDay(date, tempStart)) && 
-      (isBefore(date, tempEnd) || isSameDay(date, tempEnd))
-    );
-  };
-
-  const isStartOrEndDate = (date) => {
-    return (tempStart && isSameDay(date, tempStart)) || 
-           (tempEnd && isSameDay(date, tempEnd));
-  };
-
-  const confirmSelection = () => {
-    if (tempStart && tempEnd) {
-      setSelectedStart(tempStart);
-      setSelectedEnd(tempEnd);
-      onConfirm({
-        from: tempStart,
-        to: tempEnd
-      });
-    }
-  };
-
-  const resetSelection = () => {
-    setTempStart(null);
-    setTempEnd(null);
-  };
-
-  const days = Array.from({ length: daysInMonth(viewDate) }, (_, i) => {
-    return new Date(viewDate.getFullYear(), viewDate.getMonth(), i + 1);
-  });
-  const blanks = Array.from({ length: firstDayOfMonth(viewDate) });
-  
-  return (
-    <div className="p-4 bg-gray-800 rounded-lg shadow-xl w-80">
-      {/* Month Navigation */}
-      <div className="flex justify-between items-center mb-4">
-        <button onClick={prevMonth} className="p-1 hover:bg-gray-700 rounded">
-          <ChevronLeft className="w-4 h-4 text-gray-400" />
-        </button>
-        <span className="text-gray-200 font-semibold">
-          {format(viewDate, 'MMMM yyyy')}
-        </span>
-        <button onClick={nextMonth} className="p-1 hover:bg-gray-700 rounded">
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-        </button>
-      </div>
-      
-      {/* Days of Week */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-          <div key={day} className="text-center text-gray-400 text-sm">{day}</div>
-        ))}
-      </div>
-      
-      {/* Days Grid */}
-      <div className="grid grid-cols-7 gap-1">
-        {blanks.map((_, i) => (
-          <div key={`blank-${i}`} className="h-8" />
-        ))}
-        {days.map(date => {
-          const inRange = isDateInRange(date);
-          const isStartEnd = isStartOrEndDate(date);
-          
-          return (
-            <button
-              key={date.toISOString()}
-              onClick={() => handleDateClick(date)}
-              className={`
-                h-8 w-8 rounded-full flex items-center justify-center transition-colors
-                ${isStartEnd ? 'bg-blue-600 text-white' : ''}
-                ${inRange ? 'bg-blue-600/30 text-white' : ''}
-                ${!isStartEnd && !inRange ? 'text-gray-300 hover:bg-gray-700' : ''}
-              `}
-            >
-              {date.getDate()}
-            </button>
-          );
-        })}
-      </div>
-      
-      {/* Selection Feedback */}
-      <div className="mt-4 space-y-2">
-        {tempStart && (
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-300">
-              Start Date: {tempStart ? format(tempStart, 'MMM d, yyyy') : 'Not selected'}
-            </span>
-            {tempStart && (
-              <button 
-                onClick={resetSelection}
-                className="text-red-400 hover:text-red-300 text-sm"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        )}
-        
-        {tempEnd && (
-          <div className="text-sm text-gray-300">
-            End Date: {format(tempEnd, 'MMM d, yyyy')}
-          </div>
-        )}
-        
-        {tempStart && tempEnd && (
-          <button 
-            onClick={confirmSelection}
-            className="w-full flex items-center justify-center gap-2 bg-green-600 text-white rounded-lg py-2 hover:bg-green-700 transition-colors"
-          >
-            <Check className="w-5 h-5" />
-            Confirm Date Range
-          </button>
-        )}
-        
-        {!tempStart && (
-          <div className="text-sm text-gray-400 text-center">
-            Select a start date
-          </div>
-        )}
-        
-        {tempStart && !tempEnd && (
-          <div className="text-sm text-gray-400 text-center">
-            Now select an end date
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+import React, { useEffect, useState, useCallback } from 'react';
+import { Search, ArrowUpDown, Github, Trophy, ChevronDown } from 'lucide-react';
+import DateRangePicker from './DateRangePicker';
 
 const Leaderboard = () => {
-  const [leaderboardData, setLeaderboardData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [contributors, setContributors] = useState([]);
+  const [filteredContributors, setFilteredContributors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [searchText, setSearchText] = useState('');
   const [sortOrder, setSortOrder] = useState('points_desc');
-  const [date, setDate] = useState({
+  const [dateRange, setDateRange] = useState({
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date()
   });
-  const [expandedUser, setExpandedUser] = useState(null);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [expandedContributor, setExpandedContributor] = useState(null);
+  const [isCalendarVisible, setIsCalendarVisible] = useState(false);
 
-  const owner = 'juspay';
-  const repo = 'hyperswitch';
+  const repoName = import.meta.env.VITE_REPO;
+  const repoOwner = import.meta.env.VITE_OWNER;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  const fetchContributors = useCallback(async () => {
+    if (!dateRange.from || !dateRange.to) return;
+
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const { from, to } = dateRange;
+      const response = await axios.get(
+        `${API_BASE_URL}/leaderboard/external?save=&refresh=false&owner=${repoOwner}&repo=${repoName}`, 
+        {
+          params: {
+            sort: sortOrder,
+            startDate: from.toISOString(),
+            endDate: to.toISOString()
+          }
+        }
+      );
+
+      const { leaderboard = [] } = response.data;
+      setContributors(leaderboard);
+      setFilteredContributors(leaderboard);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setErrorMessage('Failed to fetch data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [repoOwner, repoName, dateRange, sortOrder, API_BASE_URL]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!date.from || !date.to) return;
-
-      setLoading(true);
-      setError(null);
-      try {
-        const fromDate = date.from.toISOString();
-        const toDate = date.to.toISOString();
-        
-        const response = await axios.get(
-          `http://localhost:5000/leaderboard/${owner}/${repo}/external?sort=${sortOrder}&from=${fromDate}&to=${toDate}`
-        );
-        const { leaderboard = [] } = response.data;
-        setLeaderboardData(leaderboard);
-        setFilteredData(leaderboard);
-      } catch (err) {
-        setError('Failed to fetch data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [date.from, date.to, sortOrder]);
-
+    fetchContributors();
+  }, [fetchContributors]);
 
   useEffect(() => {
-    const filtered = leaderboardData.filter(contributor =>
-      contributor.username.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = contributors.filter(({ username }) =>
+      username.toLowerCase().includes(searchText.toLowerCase())
     );
-    setFilteredData(filtered);
-  }, [searchQuery, leaderboardData]);
+    setFilteredContributors(filtered);
+  }, [searchText, contributors]);
 
-  const handleToggleExpand = (username) => {
-    setExpandedUser(expandedUser === username ? null : username);
+  const toggleSortOrder = () => {
+    setSortOrder(prevOrder => (prevOrder === 'points_desc' ? 'points_asc' : 'points_desc'));
   };
 
-  const toggleSort = () => {
-    setSortOrder(prev => 
-      prev === 'points_desc' ? 'points_asc' : 'points_desc'
-    );
+  const toggleExpandedContributor = (username) => {
+    setExpandedContributor(expandedContributor === username ? null : username);
   };
 
-  const getPointsColor = (points) => {
+  const getPointsClass = (points) => {
     if (points >= 100) return 'text-yellow-400';
     if (points >= 50) return 'text-blue-400';
     return 'text-white';
   };
 
-  const getRankBadge = (rank) => {
-    switch(rank) {
-      case 1:
-        return <Trophy className="w-6 h-6 text-yellow-400" />;
-      case 2:
-        return <Trophy className="w-6 h-6 text-gray-400" />;
-      case 3:
-        return <Trophy className="w-6 h-6 text-amber-600" />;
-      default:
-        return rank;
+  const renderRankBadge = (rank) => {
+    switch (rank) {
+      case 1: return <Trophy className="w-6 h-6 text-yellow-400" />;
+      case 2: return <Trophy className="w-6 h-6 text-gray-400" />;
+      case 3: return <Trophy className="w-6 h-6 text-amber-600" />;
+      default: return rank;
     }
   };
 
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-900">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -268,8 +94,8 @@ const Leaderboard = () => {
     );
   }
 
-  if (error) {
-    return <div className="mt-4 text-center text-red-500">{error}</div>;
+  if (errorMessage) {
+    return <div className="mt-4 text-center text-red-500">{errorMessage}</div>;
   }
 
   return (
@@ -301,25 +127,24 @@ const Leaderboard = () => {
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative">
           <button
-            onClick={() => setShowCalendar(!showCalendar)}
+            onClick={() => setIsCalendarVisible(!isCalendarVisible)}
             className="w-full md:w-auto px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 flex items-center gap-2"
           >
             <ChevronDown className="w-4 h-4" />
-            {date.from && date.to ? (
-              <>
-                {format(date.from, "MMM d, yyyy")} - {format(date.to, "MMM d, yyyy")}
-              </>
+            {dateRange.from && dateRange.to ? (
+              `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`
             ) : (
-              <span>Pick a date range</span>
+              'Pick a date range'
             )}
           </button>
-          {showCalendar && (
+          {isCalendarVisible && (
             <div className="absolute top-full left-0 mt-2 z-50">
               <DateRangePicker
-                initialSelected={date}
-                onConfirm={(newDate) => {
-                  setDate(newDate);
-                  setShowCalendar(false);
+                initialSelected={dateRange}
+                onConfirm={(newRange) => {
+                  setDateRange(newRange);
+                  setIsCalendarVisible(false);
+                  fetchContributors();
                 }}
               />
             </div>
@@ -329,8 +154,8 @@ const Leaderboard = () => {
         <div className="relative flex-1">
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
             placeholder="Search contributors..."
             className="w-full p-3 pl-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
           />
@@ -338,7 +163,10 @@ const Leaderboard = () => {
         </div>
 
         <button
-          onClick={toggleSort}
+          onClick={() => {
+            toggleSortOrder();
+            fetchContributors(); 
+          }}
           className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
         >
           <ArrowUpDown className="w-5 h-5" />
@@ -359,7 +187,7 @@ const Leaderboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {filteredData.map((contributor, index) => (
+              {filteredContributors.map((contributor, index) => (
                 <React.Fragment key={contributor.username}>
                   <motion.tr 
                     className="hover:bg-gray-700 transition-colors"
@@ -368,7 +196,7 @@ const Leaderboard = () => {
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
                     <td className="px-6 py-4 text-gray-300">
-                      {getRankBadge(index + 1)}
+                      {renderRankBadge(index + 1)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -388,7 +216,7 @@ const Leaderboard = () => {
                         )}
                       </div>
                     </td>
-                    <td className={`px-6 py-4 font-semibold ${getPointsColor(contributor.points)}`}>
+                    <td className={`px-6 py-4 font-semibold ${getPointsClass(contributor.points)}`}>
                       {contributor.points} pts
                     </td>
                     <td className="px-6 py-4 text-gray-300">
@@ -396,14 +224,14 @@ const Leaderboard = () => {
                     </td>
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => handleToggleExpand(contributor.username)}
+                        onClick={() => toggleExpandedContributor(contributor.username)}
                         className="text-blue-400 hover:text-blue-300"
                       >
                         {expandedUser === contributor.username ? 'Hide' : 'Show'}
                       </button>
                     </td>
                   </motion.tr>
-                  {expandedUser === contributor.username && (
+                  {expandedContributor === contributor.username && (
                     <tr>
                       <td colSpan="5" className="px-6 py-4 bg-gray-750">
                         <div className="space-y-3">

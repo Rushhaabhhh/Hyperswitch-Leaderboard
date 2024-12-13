@@ -14,12 +14,21 @@ const leaderboardRoutes = require('./Routes/LeaderboardRoute');
 const app = express();
 
 // Enable CORS for frontend communication
+const allowedOrigins = [
+    'https://hyperswitch-leaderboard.vercel.app',
+    'http://localhost:5173'
+];
+
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+        else callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 
 // Parse JSON requests
 app.use(express.json());

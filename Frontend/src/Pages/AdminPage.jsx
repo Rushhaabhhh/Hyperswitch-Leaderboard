@@ -17,7 +17,7 @@ const AdminPage = () => {
 
   const repoName = import.meta.env.VITE_REPO;
   const repoOwner = import.meta.env.VITE_OWNER;
-  const API_URL = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     fetchContributorData();
@@ -27,7 +27,7 @@ const AdminPage = () => {
     setIsLoading(true);
     try {
       const response = await axios.get(
-        `${API_URL}/leaderboard/repo/${repoOwner}/${repoName}?sort=${sortMethod}`
+        `${API_BASE_URL}/leaderboard/${repoOwner}/${repoName}/external?sort=${sortMethod}`
       );
       setContributors(response.data.leaderboard || []);
     } catch (err) {
@@ -40,7 +40,7 @@ const AdminPage = () => {
   const handleRemoveContributor = async (username) => {
     try {
       await axios.delete(
-        `${API_URL}/leaderboard/repo/${repoOwner}/${repoName}/contributor/${username}`
+        `${API_BASE_URL}/leaderboard/${repoOwner}/${repoName}/contributor/${username}`
       );
       fetchContributorData();
     } catch (err) {
@@ -48,15 +48,50 @@ const AdminPage = () => {
     }
   };
 
-  const handlePointsUpdate = async (username, points, reason) => {
+  const handlePointsUpdate = async (username, pointsToAdd, reason = '') => {
     try {
-      await axios.patch(
-        `${API_URL}/leaderboard/repo/${repoOwner}/${repoName}/contributor/${username}/points`,
-        { pointsToAdd: points, reason }
+      // Validate inputs
+      if (!username || !pointsToAdd) {
+        throw new Error('Username and points are required');
+      }
+
+      // Call backend to update points
+      const response = await axios.patch(
+        `${API_BASE_URL}/leaderbaord/users/${username}/points`, 
+        { 
+          pointsToAdd, 
+          reason 
+        }
       );
-      fetchContributorData();
+
+      // Destructure response for clarity
+      const { 
+        newPoints, 
+        username: updatedUsername, 
+        updatedAt 
+      } = response.data;
+
+      // Update users state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.username === updatedUsername 
+            ? { 
+            ...user, 
+            points: newPoints,
+            lastPointUpdate: updatedAt 
+            } 
+          : user
+        )
+      );
+
+
+      // Re-sort if needed
+      setUsers(prev => [...prev].sort((a, b) => b.points - a.points));
+
     } catch (err) {
-      setFetchError('Failed to update points');
+      const errorMessage = err.response?.data?.message || 'Failed to update points';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 

@@ -1,4 +1,4 @@
-const cron = require('cron');
+const cron = require('node-cron');
 const axios = require('axios');
 const dotenv = require('dotenv');
 const Redis = require('ioredis');
@@ -326,7 +326,6 @@ class LeaderboardController {
       throw error;
     }
   }
-  // Enhanced method to update Redis cache
   
 
   // Static method to update user points
@@ -562,10 +561,10 @@ class LeaderboardController {
   }
 }
 
-// const repositories = [
-//   { owner: 'juspay', repo: 'hyperswitch' },
-// ];
-// const dataSync = new LeaderboardController();
-// dataSync.setupDailyRepositorySync(repositories);
+const repositories = [
+  { owner: 'juspay', repo: 'hyperswitch' },
+];
+const dataSync = new LeaderboardController();
+dataSync.setupDailyRepositorySync(repositories);
 
 module.exports = LeaderboardController;

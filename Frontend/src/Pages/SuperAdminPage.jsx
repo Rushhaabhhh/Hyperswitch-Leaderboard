@@ -18,11 +18,10 @@ const SuperAdminPage = () => {
     const [error, setError] = useState(null);
     const [sortOrder, setSortOrder] = useState('points_desc');
     const [activeTab, setActiveTab] = useState('contributors');
-    const [leaderboardData, setLeaderboardData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
 
-    const owner = 'juspay';
-    const repo = 'hyperswitch';
+  const repoName = import.meta.env.VITE_REPO;
+  const repoOwner = import.meta.env.VITE_OWNER;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     // Error auto-dismiss effect
     useEffect(() => {
@@ -56,7 +55,7 @@ const SuperAdminPage = () => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:5000/leaderboard/${owner}/${repo}/external?sort=${sortOrder}`
+                `${API_BASE_URL}/leaderboard/${repoOwner}/${repoName}/external?sort=${sortOrder}`
             );
             const { leaderboard = [] } = response.data;
             setUsers(leaderboard);
@@ -67,32 +66,11 @@ const SuperAdminPage = () => {
         }
     };
 
-    const updateUserPointsInLeaderboard = (username, pointsAdded, newTotalPoints) => {
-        // Create a new array with updated points
-        const updatedLeaderboard = leaderboardData.map(contributor => {
-          if (contributor.username === username) {
-            return {
-              ...contributor,
-              points: newTotalPoints, // Use the total points from the backend response
-              contributions: contributor.contributions + 1 // Optionally increment contributions
-            };
-          }
-          return contributor;
-        });
-    
-        // Re-sort the leaderboard
-        const sortedLeaderboard = updatedLeaderboard.sort((a, b) => b.points - a.points);
-        
-        // Update both leaderboard and filtered data
-        setLeaderboardData(sortedLeaderboard);
-        setFilteredData(sortedLeaderboard);
-      };
-
     const fetchAdminsData = async () => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:5000/auth/get-admin`
+                `${API_BASE_URL}/auth/get-admin`
             );
             setAdmins(response.data || []);
             setError(null); 
@@ -113,7 +91,7 @@ const SuperAdminPage = () => {
     
             // Update user type
             const response = await axios.patch(
-                `http://localhost:5000/leaderboard/users/${username}`
+                `${API_BASE_URL}/leaderboard/users/${username}`
             );
     
             // Update local state immediately for responsive UI
@@ -138,7 +116,7 @@ const SuperAdminPage = () => {
                 return;
             }
 
-            await axios.delete('http://localhost:5000/auth/remove-admin', {
+            await axios.delete(`${API_BASE_URL}/auth/remove-admin`, {
                 data: { userId: admin.id },
             });
 
@@ -157,7 +135,7 @@ const SuperAdminPage = () => {
     const handleAddAdmin = async (adminData) => {
         try {
             await axios.post(
-                'http://localhost:5000/auth/assign-admin',
+              `${API_BASE_URL}/auth/assign-admin`,
                 adminData
             );
             console.log(adminData);
@@ -176,7 +154,7 @@ const SuperAdminPage = () => {
     
             // Call backend to update points
             const response = await axios.patch(
-                `http://localhost:5000/users/${username}/points`, 
+                `${API_BASE_URL}/leaderbaord/users/${username}/points`, 
                 { 
                     pointsToAdd, 
                     reason 
@@ -186,7 +164,6 @@ const SuperAdminPage = () => {
             // Destructure response for clarity
             const { 
                 newPoints, 
-                oldPoints, 
                 username: updatedUsername, 
                 updatedAt 
             } = response.data;
