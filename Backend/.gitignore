@@ -1,4 +1,2 @@
 .env
-
-/flox
-/node_modules
+node_modules
